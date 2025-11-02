@@ -1,0 +1,49 @@
+difficulty,question,answer,subject,questionID,answer_generated
+medium,Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?,"They package the system as A·v=b with A=[[1,1],[1,-1]], v=[x,y]^T, b=[5,1]^T. You can then use inverse matrices or row-reduction to solve systematically: A^{-1}b → x=3, y=2.",algebra,390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324,"To solve the system of equations using matrices, we can represent the equations as a matrix equation:
+
+| 1  1 | |x| |y| = 5 |
+| 1 -1 | |y| = 1 |
+
+We can rewrite this as:
+
+| 1  1 | |x| |y| = 5 |
+| 0  -1 | |y| = 1 |
+
+Now, we can multiply the second row by -1 to get:
+
+| 1  1 | |x| |y| = 5 |
+| 0  1 | -y = 1 |
+
+Now, we can multiply the first row by -1 to get:
+
+| 1  1 | |x| |y| = 5 |
+| 0 -1 | -y = 1 |
+
+Now, we can add the two equations together to eliminate y:
+
+| 1  2 | |x| |y| ="
+medium,What kind of function has a graph that is a straight line?,A linear function: y=mx+b.,algebra,a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584,"assistant
+
+A linear function is a type of function that has a straight line graph."
+medium,What's the highest point in South America?,"Aconcagua (6,961 m) in Argentina.",geography,be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d,"assistant
+
+The highest point in South America is Aconcagua, located in Argentina. It stands at a height of 6,962 meters (22,841 feet) above sea level."
+medium,I read about the 'Llanos.' What are they and where are they found?,"Vast tropical grasslands/savannas mainly in Venezuela and eastern Colombia, along the Orinoco basin.",geography,834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524,"assistant
+
+The Llanos are a vast grassland region that spans across several countries in South America, stretching from Venezuela to Colombia. They are also known as the ""Great Plains of South America"" or ""Pantanos de la Costa"" (Coastal Plains).
+
+The Llanos are a unique and fascinating region, characterized by:
+
+1. **Location**: The Llanos cover an area of approximately 2 million square kilometers (772,000 sq mi) across Venezuela, Colombia, Ecuador, and Brazil.
+2. **Geography**: The Llanos are a vast, flat to gently sloping plain, often with a mix of savannas, grasslands, and wetlands. They are typically found near the equator, where the climate is warm and humid.
+3. **Vegetation**: The Llanos are dominated by grasses, including tall grasses, shrubs, and trees, such as palo santo (a type of c"
+medium,Which country is known as the 'Land of the Thunder Dragon'?,Bhutan.,geography,b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d,"assistant
+
+The country known as the ""Land of the Thunder Dragon"" is Mongolia."
+medium,In what ways did the Industrial Revolution influence political ideologies in Europe?,"It fueled liberalism (free markets, rights), socialism/Marxism (worker response to inequality), and later social democracy and labor movements; it also provoked conservative reactions to rapid change.",history,154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b,"assistant
+
+The Industrial Revolution had a profound impact on European politics, leading to significant changes in various aspects of society, economy, and governance. Here are some key ways in which the Industrial Revolution influenced political ideologies in Europe:
+
+1. **Shift from Feudalism to Capitalism**: The Industrial Revolution marked a transition from a feudal system to a capitalist system, where factories replaced traditional craft guilds and small-scale production. This shift led to the emergence of a new class of industrial capitalists, who exploited workers for profit. This created a new social hierarchy, with the wealthy industrialists at the top and the working class at the bottom.
+2. **Emergence of Social Classes**: The Industrial Revolution created new social classes, including the industrial bourgeoisie (those who owned the means of production) and the working class (those who worked in factories). This led to increased social and economic inequality, as the industrial bourgeoisie accumulated wealth and power, while the working class struggled to make ends meet.
+3."

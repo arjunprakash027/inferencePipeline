@@ -14,7 +14,7 @@ os.environ['TRANSFORMERS_OFFLINE'] = '1'
 if __name__ == '__main__':
     # ====== CONFIG ======
     input_file = "sample_questions.xlsx"   
-    output_file = "answers_output.xlsx"
+    output_file = "answers_output.csv"
     # =====================
 
     print("[MAIN] Starting pipeline run...")
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     merged_df = df.merge(answers_df, on="questionID", how="left", suffixes=('', '_generated'))
 
     # Save results
-    merged_df.to_excel(output_file, index=False)
+    merged_df.to_csv(output_file, index=False)
     print(f"[MAIN] Results saved to {output_file}")
     
     # Optional: print few results
