@@ -13,7 +13,7 @@ os.environ['TRANSFORMERS_OFFLINE'] = '1'
 
 if __name__ == '__main__':
     # ====== CONFIG ======
-    input_file = "sample_questions.xlsx"   # Path to your Excel file
+    input_file = "sample_questions.xlsx"   
     output_file = "answers_output.xlsx"
     # =====================
 
