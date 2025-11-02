@@ -32,18 +32,18 @@ class OptimizedInferencePipeline:
         print("[LOAD_MODEL] Starting model load...")
         model_name = "meta-llama/Llama-3.2-1B-Instruct"
         #cache_dir = '/app/models'
-        cache_dir = './app/model'
+        cache_dir = './app/models'
         
         print(f"[LOAD_MODEL] Loading model: {model_name}")
         print(f"[LOAD_MODEL] Using device: {self.device}")
         
-        # 4-bit quantization configuration
-        # quantization_config = BitsAndBytesConfig(
-        #     load_in_4bit=True,
-        #     bnb_4bit_compute_dtype=torch.float16,
-        #     bnb_4bit_use_double_quant=True,
-        #     bnb_4bit_quant_type="nf4"
-        # )
+        #4-bit quantization configuration
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4"
+        )
         
         print("[LOAD_MODEL] Loading tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -63,7 +63,7 @@ class OptimizedInferencePipeline:
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
-            #quantization_config=quantization_config,
+            quantization_config=quantization_config,
             device_map="auto",
             torch_dtype=torch.float16,
             trust_remote_code=True,
