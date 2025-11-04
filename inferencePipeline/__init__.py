@@ -1,223 +1,298 @@
 """
-EXTREME Performance LLM Pipeline - Maximum Speed Optimizations
-Target: Sub-18 seconds with maintained accuracy
+Highly Optimized LLM Inference Pipeline for Tech Arena 2025
+Focus: Speed + Accuracy through prompt engineering and parallelization
 """
 
 import torch
-import os
+import time
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from typing import List, Dict
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
 
+# Disable unnecessary warnings and features
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
-# Disable torch warnings for speed
-os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 class OptimizedInferencePipeline:
     def __init__(self):
-        # Maximum CPU utilization
-        torch.set_num_threads(16)
-        torch.set_num_interop_threads(1)
-        
-        # Disable gradient computation globally
-        torch.set_grad_enabled(False)
-        
         self.model = None
         self.tokenizer = None
         self.device = "cpu"
-        self.batch_size = 28  # Increased from 24
-        
-        # Pre-compute common prompt templates to avoid string operations
-        self.prompt_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_msg}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        self.batch_size = 32  # Larger batches for CPU efficiency
+        self.max_new_tokens = 80  # Balanced for quality answers
         
     def load_model(self):
-        """Load model with extreme optimizations"""
-        model_name = "meta-llama/Llama-3.2-1B-Instruct"
-        cache_dir = './app/model'
+        """Load model with CPU optimizations"""
+        # Use Llama 3.2 1B for best balance of speed/accuracy
+        model_name = "meta-llama/Llama-3.2-3B-Instruct"
+        cache_dir = '/app/models'
         
-        # Load tokenizer once
+        # Load tokenizer with left padding for decoder models
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
             trust_remote_code=True,
-            padding_side='left',
-            use_fast=True  # Use fast tokenizer for speed
         )
         
+        # CRITICAL: Left padding for batch inference
+        self.tokenizer.padding_side = 'left'
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
         
-        # Load with bfloat16
+        # Load model with CPU optimizations
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
-            device_map={"":"cpu"},
-            torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float32,  # FP32 for CPU stability
             trust_remote_code=True,
             low_cpu_mem_usage=True,
-            attn_implementation="eager",  # Faster for CPU inference
         )
         
-        # Set to eval and disable dropout for consistency
         self.model.eval()
-        for module in self.model.modules():
-            if hasattr(module, 'dropout'):
-                module.dropout = 0.0
         
-        # Torch compile with aggressive settings
+        # Enable torch.compile for CPU optimization (Python 3.12 + PyTorch 2.0+)
         try:
-            self.model = torch.compile(
-                self.model, 
-                mode="max-autotune",  # Most aggressive optimization
-                fullgraph=True
-            )
+            self.model = torch.compile(self.model, mode="reduce-overhead")
         except:
-            try:
-                self.model = torch.compile(self.model, mode="reduce-overhead")
-            except:
-                pass
-        
-    def create_prompt(self, question: str) -> tuple:
-        """
-        Ultra-fast prompt creation with pre-computed templates.
-        Returns (prompt, max_tokens)
-        """
-        ql = question.lower()
-        
-        # Fast keyword lookup with early exit
-        # Check most common first (geography)
-        if 'capital' in ql or 'country' in ql or 'city' in ql or 'continent' in ql or 'geography' in ql or \
-           'ocean' in ql or 'mountain' in ql or 'river' in ql or 'located' in ql or 'border' in ql or \
-           'lake' in ql or 'sea' in ql or 'island' in ql or 'desert' in ql or 'largest' in ql or \
-           'highest' in ql or 'deepest' in ql or 'longest' in ql or 'known as' in ql or 'called' in ql or \
-           'land of' in ql or 'region' in ql or 'territory' in ql or 'nation' in ql:
-            system_msg = "You are a geography expert. Provide accurate, concise answers about locations, countries, and geography. When answering about nicknames or cultural references (like 'God's Own Country', 'Land of Rising Sun'), clearly state which place it refers to and provide brief context."
-            return self.prompt_template.format(system_msg=system_msg, question=question), 125
-        
-        # Math - second most common
-        if 'solve' in ql or 'calculate' in ql or 'equation' in ql or 'x=' in ql or 'algebra' in ql or \
-           'factor' in ql or 'simplify' in ql or 'evaluate' in ql or 'compute' in ql or 'polynomial' in ql or \
-           '+' in ql or '-' in ql or '*' in ql or '/' in ql:
-            system_msg = "You are a math expert. Solve the problem step by step and provide the final answer clearly."
-            return self.prompt_template.format(system_msg=system_msg, question=question), 155
-        
-        # History
-        if 'when' in ql or 'who' in ql or 'history' in ql or 'war' in ql or 'century' in ql or \
-           'year' in ql or 'historical' in ql or 'ancient' in ql or 'empire' in ql or 'battle' in ql or \
-           'king' in ql or 'queen' in ql or 'president' in ql or 'dynasty' in ql or 'revolution' in ql or \
-           'treaty' in ql or 'founded' in ql or 'established' in ql or 'reign' in ql or 'born' in ql or 'died' in ql:
-            system_msg = "You are a history expert. Provide accurate, concise answers about historical events, dates, and figures. CRITICAL: Always include specific YEARS (and month/day if known). If asked 'when', begin your answer with the exact date. Use full proper names. Example: 'The French Revolution began in 1789.' Be factual and precise."
-            return self.prompt_template.format(system_msg=system_msg, question=question), 185
-        
-        # General fallback
-        system_msg = "You are a helpful educational assistant. Provide clear, accurate, and concise answers."
-        return self.prompt_template.format(system_msg=system_msg, question=question), 135
+            pass  # Fallback if compile fails
     
-    def process_batch(self, questions: List[str]) -> List[str]:
-        """Extreme-speed batch processing"""
+    def create_expert_prompt(self, question: str, subject: str) -> str:
+        """
+        Expert-level prompt engineering for maximum accuracy.
+        Each subject gets specialized instructions.
+        """
         
-        # Batch create prompts
-        prompt_data = [self.create_prompt(q) for q in questions]
-        prompts = [p for p, _ in prompt_data]
-        max_tokens = max(t for _, t in prompt_data)
+        if subject == "algebra":
+            system_prompt = """You are an expert mathematics tutor specializing in algebra. 
+Your answers must be:
+- Precise and mathematically accurate
+- Concise but complete
+- Include final answers clearly
+- Show key steps for equations
+- Use standard mathematical notation
+
+Answer the question directly and accurately."""
+            
+        elif subject == "geography":
+            system_prompt = """You are an expert geographer with comprehensive knowledge of world geography.
+Your answers must be:
+- Factually accurate with specific details
+- Include relevant numbers (elevation, area, population) when applicable
+- Mention locations precisely (countries, regions, coordinates)
+- Be concise but informative
+
+Answer the question directly and accurately."""
+            
+        elif subject == "history":
+            system_prompt = """You are an expert historian with deep knowledge of world history.
+Your answers must be:
+- Historically accurate with specific dates/periods when relevant
+- Explain causes and effects clearly
+- Mention key figures, events, and movements
+- Provide context concisely
+- Be objective and balanced
+
+Answer the question directly and accurately."""
+            
+        else:
+            system_prompt = """You are a knowledgeable educational assistant.
+Provide clear, accurate, and concise answers to questions.
+Be direct and factual."""
         
-        # Ultra-fast tokenization
+        # Llama 3.2 chat format
+        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+{question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+"""
+        return prompt
+    
+    def detect_subject(self, question: str) -> str:
+        """Fast subject detection using keyword matching"""
+        q_lower = question.lower()
+        
+        # Algebra keywords
+        algebra_keywords = [
+            'solve', 'equation', 'factor', 'simplify', 'polynomial',
+            'matrix', 'matrices', 'function', 'graph', 'linear',
+            'quadratic', 'variable', 'calculate', 'algebra', 'derivative',
+            'integral', 'coefficient', 'expression', 'formula', 'theorem',
+            'x=', 'y=', 'f(x)', 'vertex', 'slope', 'intercept'
+        ]
+        
+        # Geography keywords
+        geography_keywords = [
+            'country', 'capital', 'city', 'continent', 'ocean',
+            'mountain', 'river', 'lake', 'desert', 'geography',
+            'located', 'region', 'territory', 'border', 'climate',
+            'population', 'area', 'map', 'latitude', 'longitude',
+            'peninsula', 'island', 'plateau', 'valley', 'coast',
+            'nation', 'state', 'province', 'land', 'world'
+        ]
+        
+        # History keywords
+        history_keywords = [
+            'history', 'war', 'century', 'ancient', 'medieval',
+            'revolution', 'empire', 'dynasty', 'civilization', 'battle',
+            'treaty', 'independence', 'colonial', 'king', 'queen',
+            'president', 'historical', 'era', 'period', 'age',
+            'founded', 'established', 'abolished', 'invasion', 'conquest'
+        ]
+        
+        algebra_score = sum(1 for kw in algebra_keywords if kw in q_lower)
+        geography_score = sum(1 for kw in geography_keywords if kw in q_lower)
+        history_score = sum(1 for kw in history_keywords if kw in q_lower)
+        
+        scores = {
+            'algebra': algebra_score,
+            'geography': geography_score,
+            'history': history_score
+        }
+        
+        return max(scores, key=scores.get) if max(scores.values()) > 0 else 'general'
+    
+    def process_batch(self, questions: List[str], subject: str) -> List[str]:
+        """Process a batch of questions with optimized settings"""
+        
+        # Create subject-specific prompts
+        prompts = [self.create_expert_prompt(q, subject) for q in questions]
+        
+        # Tokenize with left padding
         inputs = self.tokenizer(
             prompts,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=320,  # Reduced from 350
-            return_attention_mask=True
+            max_length=512
         ).to(self.device)
         
-        # Fastest generation settings
-        outputs = self.model.generate(
-            input_ids=inputs['input_ids'],
-            attention_mask=inputs['attention_mask'],
-            max_new_tokens=max_tokens,
-            min_new_tokens=5,  # Reduced from 8
-            do_sample=False,
-            num_beams=1,
-            pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id,
-            use_cache=True,
-            repetition_penalty=1.02,  # Reduced from 1.03
-            no_repeat_ngram_size=3,
-        )
+        # Optimized generation settings
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,  # Greedy = fastest + deterministic
+                num_beams=1,  # No beam search = faster
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+                use_cache=True,  # KV cache for speed
+                temperature=None,  # Disable sampling
+                top_p=None,
+                repetition_penalty=1.0,
+            )
         
-        # Vectorized decoding
+        # Decode outputs efficiently
         answers = []
-        for i in range(len(outputs)):
-            generated_tokens = outputs[i][inputs['input_ids'][i].shape[0]:]
-            answer = self.tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+        for i, output in enumerate(outputs):
+            # Only decode the generated tokens
+            generated_tokens = output[inputs['input_ids'][i].shape[0]:]
+            answer = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+            answer = answer.strip()
             
-            # Minimal cleanup
-            if answer.startswith("assistant"):
-                answer = answer[9:].lstrip("\n").strip()
-            
-            if len(answer) < 3:
-                answer = "Unable to generate answer."
-            elif len(answer) > 5000:
+            # Enforce character limit
+            if len(answer) > 5000:
                 answer = answer[:5000]
             
             answers.append(answer)
         
         return answers
     
+    def process_subject_group(self, questions_with_ids: List[tuple], subject: str) -> List[Dict]:
+        """Process all questions of a specific subject"""
+        results = []
+        questions = [q for q, _ in questions_with_ids]
+        question_ids = [qid for _, qid in questions_with_ids]
+        
+        # Process in batches
+        for i in range(0, len(questions), self.batch_size):
+            batch_questions = questions[i:i+self.batch_size]
+            batch_ids = question_ids[i:i+self.batch_size]
+            
+            try:
+                batch_answers = self.process_batch(batch_questions, subject)
+                
+                for qid, answer in zip(batch_ids, batch_answers):
+                    results.append({
+                        "questionID": qid,
+                        "answer": answer
+                    })
+                    
+            except Exception as e:
+                # Fallback for failed batches
+                for qid in batch_ids:
+                    results.append({
+                        "questionID": qid,
+                        "answer": "Unable to generate answer due to processing error."
+                    })
+            
+            # Memory cleanup every few batches
+            if i % 100 == 0 and i > 0:
+                gc.collect()
+        
+        return results
+    
     def __call__(self, questions: List[Dict]) -> List[Dict]:
-        """Main inference - maximum performance"""
+        """
+        Main inference function with parallel subject processing.
+        """
         
         if self.model is None:
             self.load_model()
         
-        question_texts = [q['question'] for q in questions]
+        # Group questions by subject for parallel processing
+        subject_groups = {
+            'algebra': [],
+            'geography': [],
+            'history': [],
+            'general': []
+        }
         
-        # Sort by length for optimal batching
-        indexed_questions = [(i, q) for i, q in enumerate(question_texts)]
-        indexed_questions.sort(key=lambda x: len(x[1]))
+        for q in questions:
+            subject = self.detect_subject(q['question'])
+            subject_groups[subject].append((q['question'], q['questionID']))
         
-        all_answers = [None] * len(questions)  # Pre-allocate
+        all_results = []
         
-        # Process in maximum batch sizes
-        for i in range(0, len(indexed_questions), self.batch_size):
-            batch_end = min(i + self.batch_size, len(indexed_questions))
-            batch = indexed_questions[i:batch_end]
+        # Process each subject group in parallel
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {}
             
-            batch_indices = [idx for idx, _ in batch]
-            batch_qs = [q for _, q in batch]
+            for subject, questions_with_ids in subject_groups.items():
+                if questions_with_ids:  # Only process non-empty groups
+                    future = executor.submit(
+                        self.process_subject_group,
+                        questions_with_ids,
+                        subject
+                    )
+                    futures[future] = subject
             
-            try:
-                batch_answers = self.process_batch(batch_qs)
-                
-                # Direct assignment to pre-allocated array
-                for orig_idx, ans in zip(batch_indices, batch_answers):
-                    all_answers[orig_idx] = ans
-                
-            except Exception as e:
-                for orig_idx in batch_indices:
-                    all_answers[orig_idx] = "Unable to generate answer."
-            
-            # Even less frequent GC
-            if i > 0 and i % 280 == 0:
-                gc.collect()
+            # Collect results as they complete
+            for future in as_completed(futures):
+                try:
+                    results = future.result()
+                    all_results.extend(results)
+                except Exception as e:
+                    pass  # Already handled in process_subject_group
         
-        # Format output (single pass)
-        return [
-            {
-                "questionID": questions[i]['questionID'],
-                "answer": all_answers[i] if all_answers[i] else "Unable to generate answer."
-            }
-            for i in range(len(questions))
-        ]
+        # Ensure results are in original order
+        result_dict = {r['questionID']: r for r in all_results}
+        ordered_results = [result_dict[q['questionID']] for q in questions]
+        
+        return ordered_results
 
 
 def loadPipeline():
-    """Factory function to create and return the inference pipeline."""
+    """
+    Factory function to create and return the inference pipeline.
+    Entry point called by run.py
+    """
     pipeline = OptimizedInferencePipeline()
     return pipeline

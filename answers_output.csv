@@ -1,41 +1,55 @@
 difficulty,question,answer,subject,questionID,answer_generated
-medium,Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?,"They package the system as A·v=b with A=[[1,1],[1,-1]], v=[x,y]^T, b=[5,1]^T. You can then use inverse matrices or row-reduction to solve systematically: A^{-1}b → x=3, y=2.",algebra,390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324,"To solve the system of equations using matrices, we can represent the equations as a matrix equation:
+medium,Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?,"They package the system as A·v=b with A=[[1,1],[1,-1]], v=[x,y]^T, b=[5,1]^T. You can then use inverse matrices or row-reduction to solve systematically: A^{-1}b → x=3, y=2.",algebra,390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324,"I think there may be a misunderstanding here.
 
-| 1  1 | | x |   | 5 |
-| 0 -1 |   1 |
+Matrices don't actually help solve the equation x + y = 5; x - y = 1.
 
-We can then use the method of substitution or elimination to solve for x and y.
+In fact, matrices are a powerful tool for solving systems of linear equations, but they are not typically used to solve equations like this one.
 
-Here's how we can do it:
+To solve the equation x + y = 5 and x - y = 1, you would need to use algebraic methods, such as substitution or elimination, to isolate one variable in terms of the other. For example, you could add the two equations together to eliminate y:
 
-**Method 1: Using Elimination**
+x + y = 5
+x - y = 1
 
-We can multiply the second row by -1 to make the coefficients of y's in both rows equal:
+Adding the two equations gives:
 
-| x  0 | | 1 |
-| -1 1|   | -5 |
-We can now add the two equations together to eliminate the y's:
+2x = 6
 
-x + (-1)x = 0
--1x = -5
-x = 25
+Dividing both sides by 2 gives:
 
-Now that we have the value of x, we substitute it into one of the original equations to find y:
+x = 3
 
-x - y + 1 ="
-medium,What kind of function has a graph that is a straight line?,A linear function: y=mx+b.,algebra,a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584,"A linear function has the form y = mx + b, where m is the slope and b is the y-intercept."
-medium,What's the highest point in South America?,"Aconcagua (6,961 m) in Argentina.",geography,be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d,"The highest point on the continent of South America is Aconcagua, located in Argentina. It stands at an elevation of 6,962 meters (22,841 feet) above sea level."
-medium,I read about the 'Llanos.' What are they and where are they found?,"Vast tropical grasslands/savannas mainly in Venezuela and eastern Colombia, along the Orinoco basin.",geography,834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524,"The Llanos are a vast grassland region that spans across several countries in South America, primarily in Colombia, Venezuela, and Ecuador. They are also known as the ""Great Grasslands"" or ""Pantanos de Llanas."" The Llano is a unique and fascinating ecosystem that covers an area of approximately 1.5 million square kilometers (580,000 sq mi).
+Then, substituting x = 3 into one of the original"
+medium,What kind of function has a graph that is a straight line?,A linear function: y=mx+b.,algebra,a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584,A linear function is a type of function that has a straight line graph.
+medium,What's the highest point in South America?,"Aconcagua (6,961 m) in Argentina.",geography,be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d,"The highest point in South America is Aconcagua, located in Argentina, with an elevation of 6,962 meters (22,841 feet)."
+medium,I read about the 'Llanos.' What are they and where are they found?,"Vast tropical grasslands/savannas mainly in Venezuela and eastern Colombia, along the Orinoco basin.",geography,834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524,"The Llanos are a vast grassland region in South America, primarily in present-day Colombia and Venezuela. They are a type of savanna or grassland, characterized by a mix of grasses, shrubs, and trees. The Llanos are found in the eastern part of South America, stretching from the Orinoco River in Venezuela to the Orinoco River in Colombia, and from the Andes Mountains to the Caribbean coast."
+medium,Which country is known as the 'Land of the Thunder Dragon'?,Bhutan.,geography,b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d,Q: Mongolia is known as the 'Land of the Thunder Dragon'.
+medium,In what ways did the Industrial Revolution influence political ideologies in Europe?,"It fueled liberalism (free markets, rights), socialism/Marxism (worker response to inequality), and later social democracy and labor movements; it also provoked conservative reactions to rapid change.",history,154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b,"The Industrial Revolution had a profound impact on political ideologies in Europe, leading to significant changes in the way people thought about power, social class, and the role of government. Here are some key ways in which the Industrial Revolution influenced political ideologies in Europe:
 
-The Llano region is characterized by its rolling hills, grasslands, and savannas, with an average elevation of around 500-700 meters (1,640-2,300 ft) above sea level. The climate is generally warm and humid, with two distinct seasons: a dry season from May to October and a wet season from November to April.
+1. **Emergence of the Bourgeoisie**: The Industrial Revolution created a new class of industrialists and entrepreneurs who became the new aristocracy. This led to the emergence of the bourgeoisie, a class of people who held power and wealth, and who sought to maintain their privilege and influence through politics.
+2. **Rise of Liberalism**: The Industrial Revolution led to the growth of liberal thought, which emphasized individual rights, free markets, and limited government intervention in economic affairs. Liberalism became a dominant ideology in Europe, particularly in Britain, France, and Germany.
+3. **Nationalism"
+mediu m,What is gods own country,kerala,geography,4,Ireland. It is the only country in the world where the English language is the primary language spoken.
+mediu m,What is gods own country,kerala,geography,4,"South Africa. The name ""Peral"" is a misspelling of the country's name, which is officially known as the Republic of South Africa."
+mediu m,What country is called peral of africa,uagnda,geography,4,Ireland. It is the only country in the world where the English language is the primary language spoken.
+mediu m,What country is called peral of africa,uagnda,geography,4,"South Africa. The name ""Peral"" is a misspelling of the country's name, which is officially known as the Republic of South Africa."
+medium,Who won world war 2,Allies,History,7,"World War II was a global conflict that lasted from 1939 to 1945. The main Allied powers that won the war were:
 
-The Lllanos are home to a diverse range of flora and fauna, including:
+* The Allies: The United States, the United Kingdom, the Soviet Union, and other countries that fought against the Axis powers, which included Germany, Italy, and Japan.
+* The main Axis powers that surrendered were:
+* Germany: Germany surrendered on May 8, 1945, following the Allied invasion of Berlin.
+* Japan: Japan surrendered on September 2, 1945, following the atomic bombings of Hiroshima and Nagasaki and the Soviet invasion of Manchuria.
 
-* Cattle, sheep, and other livestock
-* Crops such as"
-medium,Which country is known as the 'Land of the Thunder Dragon'?,Bhutan.,geography,b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d,"The country known as ""Land of Fire"" is Bhutan."
-medium,In what ways did the Industrial Revolution influence political ideologies in Europe?,"It fueled liberalism (free markets, rights), socialism/Marxism (worker response to inequality), and later social democracy and labor movements; it also provoked conservative reactions to rapid change.",history,154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b,"The Industrial Revolution had a profound impact on European politics, leading to significant changes in the way governments were structured, ideologies developed, and societies organized. Here are some key ways in which the Industrialization influenced political ideologies:
+The war ended with the formal surrender of Japan on September 2, 1945, and the signing of the Japanese Instrument of Surrender on September 28, 1945."
+medium,what is Profitability Index,Benefit to cost ratio including discount,Finance,8,"The Profitability Index (PI) is a financial metric that measures the profitability of a business or project by comparing its net income to its total revenue. It is a widely used indicator in finance and accounting to evaluate the financial health and performance of a company.
 
-1. **Emergence of Liberalism**: The Industrial Revolution created new social and economic inequalities, leading many to question the traditional feudal system and advocate for individual rights and freedoms. This laid the groundwork for the development of liberal ideologies, which emphasized the importance of individual liberty, democracy, and the protection of property rights.
-2. **Rise of Nationalism**: As industrialization created new economic opportunities and social hierarchies, nationalist sentiments grew in many European countries. Nationalist movements emerged, seeking to assert national identity and sovereignty over newly industrialized territories.
-3. **Growth of Socialism**: In response to the growing wealth gap and social unrest, socialist ideologies emerged as a response to capitalism. Socialists"
+The Profitability Index is calculated by dividing the net income by the total revenue. A higher Profitability Index indicates that a business is more profitable, while a lower index indicates that it is less profitable.
+
+The formula for calculating the Profitability Index is:
+
+Profitability Index = Net Income / Total Revenue
+
+For example, if a company has a net income of $100,000 and total revenue of $200,000, its Profitability Index would be:
+
+Profitability Index = $100,000 / $200,000 = 0.5
+
+A Profitability Index of 0.5"
