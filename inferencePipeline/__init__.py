@@ -33,7 +33,7 @@ class OptimizedInferencePipeline:
     def load_model(self):
         """Load Llama 3.2 3B with maximum CPU optimizations"""
         model_name = "meta-llama/Llama-3.2-3B-Instruct"
-        cache_dir = '/app/models'
+        cache_dir = './app/model'
         
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(

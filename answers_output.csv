@@ -1,40 +1,28 @@
 difficulty,question,answer,subject,questionID,answer_generated
-medium,Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?,"They package the system as A·v=b with A=[[1,1],[1,-1]], v=[x,y]^T, b=[5,1]^T. You can then use inverse matrices or row-reduction to solve systematically: A^{-1}b → x=3, y=2.",algebra,390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324,"Here's the answer:
+medium,Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?,"They package the system as A·v=b with A=[[1,1],[1,-1]], v=[x,y]^T, b=[5,1]^T. You can then use inverse matrices or row-reduction to solve systematically: A^{-1}b → x=3, y=2.",algebra,390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324,"Here's the explanation:
 
-The system of equations { x + y = 5 ; x - y = 1 } can be represented in matrix form as A·v = b, where:
+The system of equations { x + y = 5 ; x - y = 1 } can be represented as a matrix equation A·v = b, where:
 
 A = [[1, 1], [1, -1]] (the coefficient matrix)
-v = [x, y]ᵀ (the variable matrix)
-b = [5, 1]ᵀ (the constant matrix)
+v = [x, y]ᵀ (the variable vector)
+b = [5, 1]ᵀ (the constant vector)
 
-To solve for x and y, we can use the property of matrix multiplication that states that if A is a square matrix and A⁻¹ is its inverse, then A⁻¹A = I, where I is the identity matrix. In this case, we can multiply both sides of the equation A·v = b by A⁻¹ to get:
+To solve for x and y, we need to find the inverse of matrix A, denoted as A⁻¹. The inverse of a 2x2 matrix A = [[a, b], [c, d]] is given by:
 
-A⁻¹A·v = A⁻¹b
-I·v"
-medium,What kind of function has a graph that is a straight line?,A linear function: y=mx+b.,algebra,a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584,"A linear function has a graph that is a straight line. To see why, consider the general form of a linear function: y = mx + b, where m is the slope and b is the y-intercept.
+A⁻¹ = (1/(ad - bc)) \* [[d, -b], [-c, a]]
 
-The graph of a linear function is a straight line because the relationship between x and y is linear, meaning that for every small change in x, there is a corresponding proportional change in y. This is represented by the slope, m, which is a constant that describes the rate of change of y with respect to x.
+In this case, A = [[1, 1], [1, -"
+medium,What kind of function has a graph that is a straight line?,A linear function: y=mx+b.,algebra,a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584,A: A linear function: y = mx + b.
+medium,What's the highest point in South America?,"Aconcagua (6,961 m) in Argentina.",geography,be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d,"A: Aconcagua, a mountain located in the Andes mountain range in Argentina, is the highest point in South America, with an elevation of 6,962 meters (22,841 feet) above sea level."
+medium,I read about the 'Llanos.' What are they and where are they found?,"Vast tropical grasslands/savannas mainly in Venezuela and eastern Colombia, along the Orinoco basin.",geography,834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524,"The Llanos are a vast grassland region in South America, covering parts of Venezuela, Colombia, and Brazil."
+medium,Which country is known as the 'Land of the Thunder Dragon'?,Bhutan.,geography,b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d,Bhutan.
+medium,In what ways did the Industrial Revolution influence political ideologies in Europe?,"It fueled liberalism (free markets, rights), socialism/Marxism (worker response to inequality), and later social democracy and labor movements; it also provoked conservative reactions to rapid change.",history,154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b,"The Industrial Revolution had a profound impact on the development of political ideologies in Europe, leading to significant changes in the way people thought about government, economy, and society. Here are some key ways in which the Industrial Revolution influenced European political ideologies:
 
-To visualize this, imagine a line on a coordinate plane. The line has a fixed slope, m, and a fixed y-intercept, b. As x increases or decreases, y changes by a constant amount, which is equal to the slope, m. This means that the line is straight and not curved.
-
-For example, the graph of y ="
-medium,What's the highest point in South America?,"Aconcagua (6,961 m) in Argentina.",geography,be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d,"A: The highest point in South America is Aconcagua, which is located in the Andes mountain range in Argentina. It stands at an elevation of 6,962 meters (22,841 feet) above sea level."
-medium,I read about the 'Llanos.' What are they and where are they found?,"Vast tropical grasslands/savannas mainly in Venezuela and eastern Colombia, along the Orinoco basin.",geography,834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524,"The Llanos are a vast grassland region in South America, covering parts of Colombia, Venezuela, and Brazil. They are characterized by a unique combination of savannas, grasslands, and tropical forests, and are often referred to as the ""grasslands of the savannas."" The Llanos are a significant ecosystem that supports a diverse range of wildlife, including many species of mammals, birds, and reptiles."
-medium,Which country is known as the 'Land of the Thunder Dragon'?,Bhutan.,geography,b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d,"Bhutan, a landlocked country located in the Eastern Himalayas, is commonly known as the ""Land of the Thunder Dragon""."
-medium,In what ways did the Industrial Revolution influence political ideologies in Europe?,"It fueled liberalism (free markets, rights), socialism/Marxism (worker response to inequality), and later social democracy and labor movements; it also provoked conservative reactions to rapid change.",history,154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b,"The Industrial Revolution, which spanned from the late 18th to the mid-19th century (1760-1840), had a profound impact on the development of political ideologies in Europe. This transformative period saw the transition from manual labor to machine-based manufacturing, leading to significant social, economic, and cultural changes that shaped the course of European history.
-
-**Causes:**
-
-1. **Rapid urbanization**: As people moved from rural areas to cities in search of work, social and economic disparities grew, leading to the emergence of a new class of industrial workers.
-2. **Mechanization and technological advancements**: New machines and factories created new forms of employment, but also increased the power of factory owners and managers, leading to exploitation"
-mediu m,What is gods own country,kerala,geography,4,"The country called the ""Pearl of Africa"" is Ethiopia."
-mediu m,What is gods own country,kerala,geography,4,"The country called the ""Pearl of Africa"" is Ethiopia."
-mediu m,What country is called peral of africa,uagnda,geography,4,"The country called the ""Pearl of Africa"" is Ethiopia."
-mediu m,What country is called peral of africa,uagnda,geography,4,"The country called the ""Pearl of Africa"" is Ethiopia."
-medium,Who won world war 2,Allies,History,7,"The outcome of World War II is a matter of historical consensus, with the Allies ultimately emerging victorious. The war was fought between two main alliances: the Allies, which consisted of the United States, the United Kingdom, France, the Soviet Union, and China, among others, and the Axis powers, which included Germany, Italy, and Japan.
-
-The war began in September 1939, when Nazi Germany, led by Adolf Hitler, invaded Poland, prompting the United Kingdom and France to declare war on Germany. Over the next year, Germany expanded its territorial control, invading and occupying several European countries, including Denmark, Norway, Belgium, the Netherlands, and France.
-
-In June 1941, Germany launched a surprise attack on the Soviet Union, known"
-medium,what is Profitability Index,Benefit to cost ratio including discount,Finance,8,"Q: What is Profitability Index?
-A: The Profitability Index (PI) is a financial metric used to evaluate the profitability of an investment or project by comparing its expected future cash flows to its initial investment. It is calculated by dividing the present value of the expected future cash flows by the initial investment, and is often used to determine whether a project is likely to be profitable."
+1. **Emergence of Liberalism**: The Industrial Revolution created new social and economic problems, such as urban poverty, inequality, and worker exploitation. In response, liberal thinkers like Adam Smith, John Stuart Mill, and Jeremy Bentham argued for individual rights, free markets, and limited government intervention in economic affairs. This led to the development of classical liberalism, which emphasized the importance of individual freedom, property rights, and the protection of the market economy.
+2. **Rise of Socialism and Marxism**:"
+mediu m,What is gods own country,kerala,geography,4,"The country called the ""Pearl of Africa"" is Egypt."
+mediu m,What is gods own country,kerala,geography,4,"The country called the ""Pearl of Africa"" is Egypt."
+mediu m,What country is called peral of africa,uagnda,geography,4,"The country called the ""Pearl of Africa"" is Egypt."
+mediu m,What country is called peral of africa,uagnda,geography,4,"The country called the ""Pearl of Africa"" is Egypt."
+medium,Who won world war 2,Allies,History,7,"A: The Allies, consisting of the United States, the United Kingdom, France, and the Soviet Union, ultimately emerged victorious in World War II. The war in Europe ended with the formal surrender of Germany on May 8, 1945 (V-E Day), while the war in the Pacific ended with the formal surrender of Japan on September 2, 1945 (V-J Day). The Allies had defeated the Axis powers, which included Germany, Italy, and Japan, after a prolonged and devastating conflict that lasted from 1939 to 1945."
+medium,what is Profitability Index,Benefit to cost ratio including discount,Finance,8,"A: A measure of the return on investment (ROI) of a project or business, calculated by dividing the net present value (NPV) of the project by its initial investment, to determine the expected profitability of the project."

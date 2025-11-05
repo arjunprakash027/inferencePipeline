@@ -1,7 +1,6 @@
 """
 Ultra-Optimized Llama.cpp Inference Pipeline for Tech Arena 2025
-Uses GGUF Q4_K_M quantization for maximum CPU performance
-Caches converted model for reuse
+v2
 """
 
 import torch
@@ -12,6 +11,7 @@ import gc
 import sys
 import subprocess
 from pathlib import Path
+import multiprocessing
 
 
 # Try to import llama-cpp-python, fallback to transformers
@@ -32,11 +32,19 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 class OptimizedInferencePipeline:
     def __init__(self):
-        self.model = None
-        self.tokenizer = None
+        """Initialize and LOAD MODEL immediately (not timed)"""
         self.device = "cpu"
-        self.batch_size = 64  # Larger batches with quantization
+        self.batch_size = 64
         self.use_llamacpp = LLAMA_CPP_AVAILABLE
+        
+        # Optimal thread configuration for 16-core AMD CPU
+        self.n_cores = multiprocessing.cpu_count()
+        self.n_physical_cores = self.n_cores // 2 if self.n_cores > 8 else self.n_cores
+        self.n_threads = max(4, int(self.n_physical_cores * 0.6))
+        self.n_threads_batch = max(2, self.n_physical_cores - self.n_threads)
+        
+        print(f"[INIT] Detected {self.n_cores} logical cores, {self.n_physical_cores} physical")
+        print(f"[INIT] Using n_threads={self.n_threads}, n_threads_batch={self.n_threads_batch}")
         
         # Subject-specific token limits
         self.token_limits = {
@@ -45,37 +53,35 @@ class OptimizedInferencePipeline:
             'geography': 100,
             'general': 120
         }
+        
+        # LOAD MODEL IMMEDIATELY IN __INIT__
+        print(f"[INIT] Loading model (this happens before timing starts)...")
+        self.model, self.tokenizer = self._load_model()
+        print(f"[INIT] ✓ Model loaded and ready for inference!")
     
     def find_snapshot_path(self, hf_cache_dir: str) -> Path:
-        """
-        Find the actual model snapshot path in HuggingFace cache structure.
-        HF cache has structure: models--org--name/snapshots/<hash>/
-        """
+        """Find the actual model snapshot path in HuggingFace cache"""
         cache_path = Path(hf_cache_dir)
-        snapshots_dir = cache_path / "models--meta-llama--Llama-3.2-1B-Instruct/snapshots"
+        snapshots_dir = cache_path / "snapshots"
         
         if snapshots_dir.exists():
-            # Get the first (usually most recent) snapshot
             snapshots = list(snapshots_dir.iterdir())
             if snapshots:
-                print(f"[SNAPSHOT] Found snapshot: {snapshots[0]}")
-                return snapshots[0]
+                snapshot = sorted(snapshots, key=lambda p: p.stat().st_mtime, reverse=True)[0]
+                print(f"[SNAPSHOT] Found: {snapshot}")
+                return snapshot
         
-        # If no snapshots directory, assume it's already the correct path
-        print(f"[SNAPSHOT] No snapshots dir, using direct path: {cache_path}")
+        print(f"[SNAPSHOT] Using direct path: {cache_path}")
         return cache_path
     
     def convert_to_gguf(self, hf_model_path: str, output_path: str) -> bool:
         """
-        Convert HuggingFace model to GGUF format.
-        Uses the llama.cpp conversion script.
+        Simple one-step conversion to Q8_0 (no llama-quantize binary needed)
+        Q8_0 is directly supported by convert_hf_to_gguf.py
         """
-        print(f"[CONVERT] Converting model to GGUF format...")
-        print(f"[CONVERT] This is a one-time operation, subsequent runs will be fast!")
+        print(f"[CONVERT] Converting to Q8_0 GGUF (one-step, 3-5 min)...")
         
         try:
-            # Point to llama.cpp/convert_hf_to_gguf.py
-            # Try multiple possible locations
             possible_scripts = [
                 Path(__file__).parent / "llama.cpp" / "convert_hf_to_gguf.py",
                 Path(__file__).parent / "llama.cpp" / "convert.py",
@@ -87,107 +93,114 @@ class OptimizedInferencePipeline:
             for script in possible_scripts:
                 if script.exists():
                     convert_script = script
-                    print(f"[CONVERT] Found conversion script: {convert_script}")
+                    print(f"[CONVERT] Found script: {convert_script}")
                     break
             
             if convert_script is None:
-                print(f"[CONVERT] Conversion script not found, trying python -m llama_cpp.convert")
-                # Fallback to module import method
-                cmd = [
-                    sys.executable,
-                    "-m", "llama_cpp.convert",
-                    hf_model_path,
-                    "--outfile", output_path,
-                    "--outtype", "q4_k_m"
-                ]
-            else:
-                # Find the actual snapshot path
-                model_path = self.find_snapshot_path(hf_model_path)
-                print("Model Path", model_path)
-                
-                cmd = [
-                    sys.executable,
-                    str(convert_script),
-                    str(model_path),
-                    "--outfile", str(output_path),
-                    "--outtype", "f16"  # or "q8_0" for 8-bit quantization
-                ]
+                print(f"[CONVERT] ERROR: Conversion script not found!")
+                return False
             
-            print(f"[CONVERT] Running: {' '.join(cmd)}")
+            model_path = self.find_snapshot_path(hf_model_path)
+            
+            # Direct Q8_0 conversion (no external tools needed)
+            cmd = [
+                sys.executable,
+                str(convert_script),
+                str(model_path),
+                "--outfile", str(output_path),
+                "--outtype", "q8_0"  # Directly supported!
+            ]
+            
+            print(f"[CONVERT] Command: {' '.join(cmd)}")
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            print(f"[CONVERT] Conversion complete! GGUF saved to {output_path}")
+            print(f"[CONVERT] ✓ Conversion complete!")
             return True
             
         except subprocess.CalledProcessError as e:
-            print(f"[CONVERT] Conversion failed with error: {e}")
-            print(f"[CONVERT] stdout: {e.stdout}")
+            print(f"[CONVERT] ✗ Failed: {e}")
             print(f"[CONVERT] stderr: {e.stderr}")
-            print(f"[CONVERT] Falling back to transformers...")
             return False
         except Exception as e:
-            print(f"[CONVERT] Conversion failed: {e}")
-            print(f"[CONVERT] Falling back to transformers...")
+            print(f"[CONVERT] ✗ Failed: {e}")
             return False
     
-    def load_model(self):
-        """Load model - use llama.cpp if available, else transformers"""
-        model_name = "meta-llama/Llama-3.2-1B-Instruct"
+    def _load_model(self):
+        """
+        PRIVATE method called ONLY from __init__
+        Returns (model, tokenizer) tuple
+        """
+        model_name = "meta-llama/Llama-3.2-3B-Instruct"
         cache_dir = './app/model'
         
-        # Always need tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        # Load tokenizer
+        print(f"[LOAD] Loading tokenizer...")
+        tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
             trust_remote_code=True,
         )
-        self.tokenizer.padding_side = 'left'
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        tokenizer.padding_side = 'left'
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        print(f"[LOAD] ✓ Tokenizer loaded")
         
         if self.use_llamacpp:
-            # Try to use llama.cpp for 2-3x speedup
-            gguf_path = Path("./gguf_cache/model.gguf")
+            # Use llama.cpp for maximum speed
+            gguf_path = Path("./gguf_cache/model_q8.gguf")
             gguf_path.parent.mkdir(exist_ok=True)
             
-            # Check if GGUF already exists (cached from previous run)
+            # Check if GGUF exists, convert if not
             if not gguf_path.exists():
-                print(f"[LOAD] GGUF not found, converting model...")
-                print(f"[LOAD] This will take 3-5 minutes but dramatically speeds up inference!")
+                print(f"[LOAD] GGUF not cached, converting (one-time 3-5 min)...")
                 
-                # Try to find the HF cache path
                 hf_path = Path(cache_dir) / "models--meta-llama--Llama-3.2-3B-Instruct"
                 if not hf_path.exists():
                     hf_path = Path(cache_dir)
                 
-                print(f"[LOAD] Using HF cache path: {hf_path}")
                 success = self.convert_to_gguf(str(hf_path), str(gguf_path))
                 
                 if not success:
-                    print(f"[LOAD] Conversion failed, using transformers instead")
+                    print(f"[LOAD] Conversion failed, falling back to transformers")
                     self.use_llamacpp = False
             else:
-                print(f"[LOAD] Found cached GGUF model, loading...")
+                print(f"[LOAD] ✓ Found cached GGUF!")
             
             if self.use_llamacpp and gguf_path.exists():
-                # Load GGUF with llama.cpp - blazing fast!
-                print(f"[LOAD] Loading GGUF model with llama-cpp-python...")
-                self.model = Llama(
+                # Load GGUF with optimal settings
+                print(f"[LOAD] Loading GGUF with llama-cpp-python...")
+                model = Llama(
                     model_path=str(gguf_path),
-                    n_ctx=2048,          # Context window
-                    n_threads=16,        # Use all 16 AMD cores
+                    n_ctx=2048,
+                    n_threads=self.n_threads,
+                    n_threads_batch=self.n_threads_batch,
                     n_batch=512,
-                    n_gpu_layers=0,      # 0 for CPU-only inference
-                    verbose=False
+                    n_ubatch=256,
+                    n_gpu_layers=0,
+                    use_mmap=True,
+                    use_mlock=False,
+                    rope_freq_base=0.0,
+                    rope_freq_scale=0.0,
+                    flash_attn=True,
+                    verbose=False,
+                    logits_all=False,
+                    embedding=False,
+                    offload_kqv=False,
                 )
-                print(f"[LOAD] llama.cpp model loaded successfully!")
-                return
+                print(f"[LOAD] ✓ GGUF model loaded")
+                
+                # WARMUP - crucial for avoiding first-query slowness
+                print(f"[LOAD] Warming up model (initializing caches)...")
+                model("Test warmup", max_tokens=5, temperature=0.0, echo=False)
+                print(f"[LOAD] ✓ Warmup complete")
+                
+                return model, tokenizer
         
-        # Fallback to transformers (original method)
-        print(f"[LOAD] Using transformers (consider installing llama-cpp-python for 2-3x speedup)")
+        # Fallback to transformers
+        print(f"[LOAD] Using transformers (slower, consider llama-cpp-python)")
         self.use_llamacpp = False
         
-        self.model = AutoModelForCausalLM.from_pretrained(
+        model = AutoModelForCausalLM.from_pretrained(
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
@@ -195,12 +208,15 @@ class OptimizedInferencePipeline:
             trust_remote_code=True,
             low_cpu_mem_usage=True,
         )
-        self.model.eval()
+        model.eval()
         
         try:
-            self.model = torch.compile(self.model, mode="reduce-overhead")
+            print(f"[LOAD] Compiling model with torch.compile...")
+            model = torch.compile(model, mode="reduce-overhead")
         except:
             pass
+        
+        return model, tokenizer
     
     def create_expert_prompt(self, question: str, subject: str) -> str:
         """Enhanced prompts with few-shot examples"""
@@ -291,12 +307,10 @@ Now answer:"""
         return max(scores, key=scores.get) if max(scores.values()) > 0 else 'general'
     
     def process_batch_llamacpp(self, questions: List[str], subject: str) -> List[str]:
-        """Process batch using llama.cpp (much faster)"""
+        """Process batch using llama.cpp - PURE INFERENCE (fastest)"""
         max_tokens = self.token_limits[subject]
         answers = []
         
-        # llama.cpp doesn't support batching the same way, process individually
-        # But it's so fast that individual processing is still faster than batched transformers!
         for question in questions:
             prompt = self.create_expert_prompt(question, subject)
             
@@ -304,10 +318,16 @@ Now answer:"""
                 output = self.model(
                     prompt,
                     max_tokens=max_tokens,
-                    temperature=0.0,  # Greedy
+                    temperature=0.0,
                     top_p=1.0,
+                    top_k=1,
                     echo=False,
                     stop=["<|eot_id|>", "<|end_of_text|>"],
+                    repeat_penalty=1.0,
+                    frequency_penalty=0.0,
+                    presence_penalty=0.0,
+                    logprobs=None,
+                    stream=False,
                 )
                 
                 answer = output['choices'][0]['text'].strip()
@@ -318,13 +338,13 @@ Now answer:"""
                 answers.append(answer)
                 
             except Exception as e:
-                print(f"[ERROR] llamacpp inference failed: {e}")
+                print(f"[ERROR] Inference failed: {e}")
                 answers.append("Error generating answer.")
         
         return answers
     
     def process_batch_transformers(self, questions: List[str], subject: str) -> List[str]:
-        """Process batch using transformers (fallback)"""
+        """Process batch using transformers - PURE INFERENCE"""
         max_tokens = self.token_limits[subject]
         prompts = [self.create_expert_prompt(q, subject) for q in questions]
         
@@ -358,12 +378,12 @@ Now answer:"""
         return answers
     
     def __call__(self, questions: List[Dict]) -> List[Dict]:
-        """Main inference function"""
-        
-        if self.model is None:
-            self.load_model()
-        
-        # Group by subject
+        """
+        Main inference function - ONLY GENERATION (timed section)
+        Model is already loaded in __init__
+        """
+        batch_size = 16
+        # Group by subject for better batching
         subject_groups = {'algebra': [], 'geography': [], 'history': [], 'general': []}
         
         for q in questions:
@@ -372,7 +392,7 @@ Now answer:"""
         
         all_results = []
         
-        # Process each subject sequentially
+        # Process each subject group
         for subject, subject_questions in subject_groups.items():
             if not subject_questions:
                 continue
@@ -380,10 +400,9 @@ Now answer:"""
             questions_text = [q['question'] for q in subject_questions]
             question_ids = [q['questionID'] for q in subject_questions]
             
-            # Choose processing method
             if self.use_llamacpp:
-                # llama.cpp - process in smaller chunks for memory efficiency
-                batch_size = 8  # Smaller batches for llamacpp individual processing
+                # llama.cpp - optimized batches
+                
                 for i in range(0, len(questions_text), batch_size):
                     batch_qs = questions_text[i:i+batch_size]
                     batch_ids = question_ids[i:i+batch_size]
@@ -393,21 +412,21 @@ Now answer:"""
                         for qid, answer in zip(batch_ids, batch_answers):
                             all_results.append({"questionID": qid, "answer": answer})
                     except Exception as e:
-                        print(f"[ERROR] Batch processing failed: {e}")
+                        print(f"[ERROR] Batch failed: {e}")
                         for qid in batch_ids:
                             all_results.append({"questionID": qid, "answer": "Error."})
             else:
-                # Transformers - use larger batches
+                # Transformers - larger batches
                 for i in range(0, len(questions_text), self.batch_size):
                     batch_qs = questions_text[i:i+self.batch_size]
-                    batch_ids = question_ids[i:i+self.batch_size]
+                    batch_ids = question_ids[i:i+batch_size]
                     
                     try:
                         batch_answers = self.process_batch_transformers(batch_qs, subject)
                         for qid, answer in zip(batch_ids, batch_answers):
                             all_results.append({"questionID": qid, "answer": answer})
                     except Exception as e:
-                        print(f"[ERROR] Batch processing failed: {e}")
+                        print(f"[ERROR] Batch failed: {e}")
                         for qid in batch_ids:
                             all_results.append({"questionID": qid, "answer": "Error."})
                     
@@ -420,30 +439,11 @@ Now answer:"""
 
 
 def loadPipeline():
-    """Factory function"""
-    return OptimizedInferencePipeline()
-
-
-# Test/debug functionality
-if __name__ == "__main__":
-    # Test conversion workflow
-    hf_cache_path = "/app/models/models--meta-llama--Llama-3.2-3B-Instruct"
-    gguf_output = "model.gguf"
-    
-    pipeline = OptimizedInferencePipeline()
-    
-    # Test conversion (only if needed)
-    if not Path(gguf_output).exists():
-        print("Converting model...")
-        pipeline.convert_to_gguf(hf_cache_path, gguf_output)
-    
-    # Test inference
-    test_questions = [
-        {"questionID": "test1", "question": "What is the capital of Ireland?"},
-        {"questionID": "test2", "question": "Solve for x: 2x + 5 = 13"}
-    ]
-    
-    results = pipeline(test_questions)
-    for result in results:
-        print(f"\nQ: {result['questionID']}")
-        print(f"A: {result['answer']}")
+    """
+    Factory function - model loads HERE (before timing)
+    Returns ready-to-use pipeline
+    """
+    print("[FACTORY] Creating and initializing pipeline...")
+    pipeline = OptimizedInferencePipeline()  # Model loads in __init__
+    print("[FACTORY] ✓ Pipeline ready for timed inference!")
+    return pipeline

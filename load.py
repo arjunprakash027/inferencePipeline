@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from inferencePipeline_llamaCpp import loadPipeline
+#from inferencePipeline import loadPipeline
 
 # Environment settings
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
