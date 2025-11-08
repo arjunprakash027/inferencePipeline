@@ -3,9 +3,13 @@ import time
 import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+<<<<<<< Updated upstream
 from inferencePipeline import loadPipeline
 #from inferencePipeline import loadPipeline
 from inferencePipeline import loadPipeline
+=======
+from inferencePipeline_llama import loadPipeline
+>>>>>>> Stashed changes
 
 # Environment settings
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
