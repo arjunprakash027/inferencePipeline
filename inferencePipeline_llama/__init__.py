@@ -130,7 +130,7 @@ class OptimizedInferencePipeline:
         Returns (model, tokenizer) tuple
         """
         model_name = "meta-llama/Llama-3.2-1B-Instruct"
-        cache_dir = './app/model'
+        cache_dir = '/app/models'
         
         # Load tokenizer
         print(f"[LOAD] Loading tokenizer...")
