@@ -13,13 +13,20 @@ import multiprocessing
 from pathlib import Path
 from typing import List, Dict
 
+# Load settings at module import time (before any inference)
+from . import get_settings
+SETTINGS = get_settings()
+
 class LlamaServer:
     """Manages the llama-server process"""
     
-    def __init__(self, model_path: str, host: str = "127.0.0.1", port: int = 8081, n_gpu_layers: int = 0):
-        self.host = host
-        self.port = port
-        self.base_url = f"http://{host}:{port}"
+    def __init__(self, model_path: str, host: str = None, port: int = None, n_gpu_layers: int = None):
+        # Use settings if not provided
+        server_cfg = SETTINGS['server']
+        self.host = host or server_cfg['host']
+        self.port = port or server_cfg['port']
+        self.n_gpu_layers = n_gpu_layers if n_gpu_layers is not None else server_cfg['n_gpu_layers']
+        self.base_url = f"http://{self.host}:{self.port}"
         self.process = None
         
         # Find server binary
@@ -28,21 +35,25 @@ class LlamaServer:
             raise FileNotFoundError(f"llama-server not found at {self.server_bin}")
             
         # Start server
-        self._start_server(model_path, n_gpu_layers)
+        self._start_server(model_path)
         atexit.register(self.stop)
 
-    def _start_server(self, model_path: str, n_gpu_layers: int):
+    def _start_server(self, model_path: str):
         """Start the llama-server process"""
+        server_cfg = SETTINGS['server']
+        
         cmd = [
             str(self.server_bin),
             "-m", model_path,
             "--host", self.host,
             "--port", str(self.port),
-            "-c", "2048",           # Context size
-            "-ngl", str(n_gpu_layers), # GPU layers (0 for CPU)
-            "--parallel", "8",      # Max concurrent requests
-            "-cb",                  # Continuous batching
+            "-c", str(server_cfg['context_size']),
+            "-ngl", str(self.n_gpu_layers),
+            "--parallel", str(server_cfg['parallel_requests']),
         ]
+        
+        if server_cfg.get('continuous_batching', True):
+            cmd.append("-cb")
         
         print(f"[SERVER] Starting llama-server on port {self.port}...")
         
@@ -96,10 +107,14 @@ class LlamaServer:
 
     async def completion(self, session: aiohttp.ClientSession, prompt: str, max_tokens: int = 100) -> str:
         """Send completion request (async)"""
+        gen_cfg = SETTINGS['inference']['generation']
+        
         data = {
             "prompt": prompt,
             "n_predict": max_tokens,
-            "temperature": 0.0,
+            "temperature": gen_cfg['temperature'],
+            "top_p": gen_cfg['top_p'],
+            "top_k": gen_cfg['top_k'],
             "stop": ["<|eot_id|>", "<|end_of_text|>"]
         }
         
@@ -117,23 +132,23 @@ class LlamaServer:
 class ServerInferencePipeline:
     def __init__(self):
         """Initialize pipeline and start server"""
+        model_cfg = SETTINGS['model']
+        server_cfg = SETTINGS['server']
+        inference_cfg = SETTINGS['inference']
+        
         self.server = None
-        # Use the q4_0 draft model as the main model for speed
-        self.model_path = Path("./gguf_cache/model_q4_0_draft.gguf")
+        # Use model from settings
+        gguf_cache = Path(model_cfg['gguf_cache_dir'])
+        self.model_path = gguf_cache / server_cfg['model_file']
         
         if not self.model_path.exists():
             raise FileNotFoundError(f"Model not found at {self.model_path}. Please run the normal pipeline once to convert it.")
 
-        # Start server (n_gpu_layers=0 for CPU)
-        self.server = LlamaServer(str(self.model_path), n_gpu_layers=0)
+        # Start server using settings
+        self.server = LlamaServer(str(self.model_path))
         
-        # Subject-specific token limits
-        self.token_limits = {
-            'algebra': 180,
-            'history': 150,
-            'geography': 100,
-            'general': 120
-        }
+        # Token limits from settings
+        self.token_limits = inference_cfg['token_limits']
 
     def create_expert_prompt(self, question: str, subject: str) -> str:
         """Enhanced prompts with few-shot examples"""
@@ -189,8 +204,10 @@ Now answer:"""
             max_tokens = self.token_limits[subject]
             tasks.append((q['questionID'], prompt, max_tokens))
         
-        # Execute concurrently with aiohttp
+        # Execute concurrently with aiohttp (max_workers from settings)
+        max_workers = SETTINGS['server']['max_workers']
         async with aiohttp.ClientSession() as session:
+            # Process in batches of max_workers to avoid overwhelming the server
             async_tasks = [
                 self._process_single(session, qid, prompt, max_tokens)
                 for qid, prompt, max_tokens in tasks

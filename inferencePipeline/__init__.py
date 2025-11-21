@@ -4,10 +4,27 @@ Entry point and shared utilities
 """
 
 import sys
+import json
 import subprocess
 import platform
 from pathlib import Path
 from typing import Optional
+
+
+# ============================================================================
+# SETTINGS LOADER (Loads once at module import time - before timing starts)
+# ============================================================================
+
+_SETTINGS = None
+
+def get_settings():
+    """Load settings from settings.json (cached after first load)"""
+    global _SETTINGS
+    if _SETTINGS is None:
+        settings_path = Path(__file__).parent / "settings.json"
+        with open(settings_path, 'r') as f:
+            _SETTINGS = json.load(f)
+    return _SETTINGS
 
 
 # ============================================================================

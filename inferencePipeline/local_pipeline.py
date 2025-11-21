@@ -16,6 +16,10 @@ os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
+# Load settings at module import time (before any inference)
+from . import get_settings
+SETTINGS = get_settings()
+
 
 class LocalInferencePipeline:
     """
@@ -23,16 +27,14 @@ class LocalInferencePipeline:
     """
     def __init__(self):
         """Initialize and LOAD MODEL immediately (not timed)"""
-        self.device = "cpu"
-        self.batch_size = 64
+        local_cfg = SETTINGS['local']
+        inference_cfg = SETTINGS['inference']
         
-        # Subject-specific token limits
-        self.token_limits = {
-            'algebra': 180,
-            'history': 150,
-            'geography': 100,
-            'general': 120
-        }
+        self.device = local_cfg['device']
+        self.batch_size = local_cfg['batch_size']
+        
+        # Token limits from settings
+        self.token_limits = inference_cfg['token_limits']
         
         # LOAD MODEL IMMEDIATELY IN __INIT__
         print(f"[INIT] Loading model (this happens before timing starts)...")
@@ -44,8 +46,11 @@ class LocalInferencePipeline:
         PRIVATE method called ONLY from __init__
         Returns (model, tokenizer) tuple
         """
-        model_name = "meta-llama/Llama-3.2-1B-Instruct"
-        cache_dir = './app/model'
+        model_cfg = SETTINGS['model']
+        local_cfg = SETTINGS['local']
+        
+        model_name = model_cfg['name']
+        cache_dir = model_cfg['cache_dir']
         
         # Load tokenizer
         print(f"[LOAD] Loading tokenizer...")
@@ -63,21 +68,31 @@ class LocalInferencePipeline:
         # Load transformers model
         print(f"[LOAD] Using transformers for local fallback")
         
+        # Map string dtype to torch dtype
+        dtype_map = {
+            'bfloat16': torch.bfloat16,
+            'float16': torch.float16,
+            'float32': torch.float32
+        }
+        torch_dtype = dtype_map.get(local_cfg['torch_dtype'], torch.bfloat16)
+        
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             cache_dir=cache_dir,
             local_files_only=True,
-            torch_dtype=torch.bfloat16,
+            torch_dtype=torch_dtype,
             trust_remote_code=True,
-            low_cpu_mem_usage=True,
+            low_cpu_mem_usage=local_cfg['low_cpu_mem_usage'],
         )
         model.eval()
         
-        try:
-            print(f"[LOAD] Compiling model with torch.compile...")
-            model = torch.compile(model, mode="reduce-overhead")
-        except:
-            pass
+        if local_cfg.get('use_torch_compile', False):
+            try:
+                compile_mode = local_cfg.get('compile_mode', 'reduce-overhead')
+                print(f"[LOAD] Compiling model with torch.compile (mode={compile_mode})...")
+                model = torch.compile(model, mode=compile_mode)
+            except Exception as e:
+                print(f"[LOAD] torch.compile failed: {e}, using uncompiled model")
         
         return model, tokenizer
     
@@ -171,6 +186,7 @@ Now answer:"""
 
     def process_batch_transformers(self, questions: List[str], subject: str) -> List[str]:
         """Process batch using transformers - PURE INFERENCE (silent)"""
+        gen_cfg = SETTINGS['inference']['generation']
         max_tokens = self.token_limits[subject]
         prompts = [self.create_expert_prompt(q, subject) for q in questions]
         
@@ -186,8 +202,8 @@ Now answer:"""
             outputs = self.model.generate(
                 **inputs,
                 max_new_tokens=max_tokens,
-                do_sample=False,
-                num_beams=1,
+                do_sample=gen_cfg['do_sample'],
+                num_beams=gen_cfg['num_beams'],
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
                 use_cache=True,
