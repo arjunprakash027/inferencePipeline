@@ -129,26 +129,51 @@ def convert_to_gguf(hf_model_path: str, output_path: str, target_q: str = "q4_1"
 def ensure_gguf_models_exist():
     """
     Ensure GGUF models exist for server use.
-    Converts from HuggingFace if needed.
+    Converts from HuggingFace if needed, using settings.json configuration.
     """
-    cache_dir = './app/model'
-    gguf_cache = Path("./gguf_cache")
+    settings = get_settings()
+    model_cfg = settings['model']
+    gguf_cfg = settings['gguf_conversion']
+    
+    cache_dir = model_cfg['cache_dir']
+    gguf_cache = Path(model_cfg['gguf_cache_dir'])
     gguf_cache.mkdir(exist_ok=True)
     
-    # Models to ensure exist
-    models_to_check = [
-        ("model_q8.gguf", "q8_0"),
-        ("model_q4_0_draft.gguf", "q4_0"),
-    ]
+    # Get model name and construct HF cache path
+    model_name = model_cfg['name']
+    # Convert model name to HF cache format: "meta-llama/Llama-3.2-1B" -> "models--meta-llama--Llama-3.2-1B"
+    hf_cache_name = "models--" + model_name.replace("/", "--")
+    hf_path = Path(cache_dir) / hf_cache_name
     
+    # Fallback to cache_dir if specific model path doesn't exist
+    if not hf_path.exists():
+        print(f"[GGUF] Looking for model in {cache_dir}")
+        hf_path = Path(cache_dir)
+    
+    # Models to check based on settings
+    if 'output_filename' in gguf_cfg:
+        # Simplified: single model conversion
+        model_name = gguf_cfg['output_filename']
+        quant = gguf_cfg.get('quantization', 'q4_0')
+        models_to_check = [(model_name, quant)]
+    elif 'target_filenames' in gguf_cfg:
+        # Legacy: multiple models (draft/main)
+        models_to_check = []
+        for key, filename in gguf_cfg['target_filenames'].items():
+            quant = gguf_cfg['target_quantizations'].get(key, 'q4_0')
+            models_to_check.append((filename, quant))
+    else:
+        # Fallback to default naming
+        models_to_check = []
+        for key, quant in gguf_cfg.get('target_quantizations', {}).items():
+            filename = f"model_{quant}.gguf"
+            models_to_check.append((filename, quant))
+    
+    # Convert each model if it doesn't exist
     for model_name, quant in models_to_check:
         model_path = gguf_cache / model_name
         if not model_path.exists():
             print(f"[GGUF] {model_name} not found, converting (one-time, 2-5 min)...")
-            
-            hf_path = Path(cache_dir) / "models--meta-llama--Llama-3.2-1B-Instruct"
-            if not hf_path.exists():
-                hf_path = Path(cache_dir)
             
             success = convert_to_gguf(str(hf_path), str(model_path), target_q=quant)
             if success:

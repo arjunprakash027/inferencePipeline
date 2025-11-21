@@ -1,8 +1,10 @@
 import os
 import time
+import json
 import argparse
 import pandas as pd
 from datetime import datetime
+from inferencePipeline import loadPipeline
 
 # Environment settings
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -49,7 +51,6 @@ if __name__ == '__main__':
     # Load questions
     print(f"[MAIN] Starting pipeline run ({args.method})...")
     input_file = "questions.xlsx"
-    output_file = "answers_output.csv"
     
     # Fallback for sample file name if needed
     if not os.path.exists(input_file) and os.path.exists("sample_questions.xlsx"):
@@ -60,7 +61,6 @@ if __name__ == '__main__':
     print(f"[MAIN] Loaded {len(questions)} questions")
 
     # Initialize pipeline based on method
-    from inferencePipeline import loadPipeline
     pipeline = loadPipeline(method=args.method)
 
     # Run inference with simple timing
@@ -72,12 +72,30 @@ if __name__ == '__main__':
     # Log results
     log_experiment(args.name, args.method, len(questions), total_time)
 
-    # Save answers
-    answers_df = pd.DataFrame(answers)
-    if "questionID" in df.columns and "questionID" in answers_df.columns:
-        merged_df = df.merge(answers_df, on="questionID", how="left")
-    else:
-        merged_df = answers_df
+    # Save answers in JSON format
+    output_file = "answers_output.json"
+    
+    # Merge questions with answers
+    results = []
+    for q in questions:
+        # Find matching answer
+        answer_dict = next((a for a in answers if a['questionID'] == q['questionID']), None)
         
-    merged_df.to_csv(output_file, index=False)
+        result = {
+            "questionID": q['questionID'],
+            "question": q.get('question', ''),
+            "answer": answer_dict['answer'] if answer_dict else "No answer generated"
+        }
+        
+        # Add any other fields from the original question
+        for key, value in q.items():
+            if key not in result:
+                result[key] = value
+                
+        results.append(result)
+    
+    # Write to JSON with pretty formatting
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    
     print(f"[MAIN] Answers saved to {output_file}")
