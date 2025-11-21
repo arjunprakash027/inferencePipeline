@@ -1,0 +1,5 @@
+timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
+2025-11-21 12:30:32,simple_test,server,10,10.75,1075.0,0.93
+2025-11-21 12:32:56,local_run,local,10,18.3,1830.0,0.55
+2025-11-21 12:33:27,local_run,local,10,22.88,2288.3,0.44
+2025-11-21 12:34:05,server_run,server,10,11.53,1153.2,0.87
