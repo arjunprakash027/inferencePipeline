@@ -3,3 +3,12 @@ timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
 2025-11-21 12:32:56,local_run,local,10,18.3,1830.0,0.55
 2025-11-21 12:33:27,local_run,local,10,22.88,2288.3,0.44
 2025-11-21 12:34:05,server_run,server,10,11.53,1153.2,0.87
+2025-11-21 12:44:01,server_run,server,10,10.19,1019.2,0.98
+2025-11-21 12:46:09,server_run,server,10,10.19,1019.0,0.98
+2025-11-21 12:46:49,server_run,server,10,9.58,958.1,1.04
+2025-11-21 12:47:11,server_run,server,10,10.06,1006.2,0.99
+2025-11-21 12:48:02,server_run,server,10,10.29,1029.2,0.97
+2025-11-21 13:02:49,clean_data_test,server,10,8.56,855.9,1.17
+2025-11-21 13:03:17,clean_data_test,server,10,7.94,793.6,1.26
+2025-11-21 13:36:32,q8_test,server,10,16.75,1674.7,0.6
+2025-11-21 13:36:56,q8_test,server,10,16.05,1605.3,0.62

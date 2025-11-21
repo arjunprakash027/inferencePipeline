@@ -281,14 +281,14 @@ class OptimizedInferencePipeline:
         if subject == "algebra":
             few_shot = """Examples:
 
-Q: What kind of function has a graph that is a straight line?
-A: A linear function: y = mx + b.
+Q: Solve for x: 3x - 7 = 14
+A: Add 7 to both sides: 3x = 21. Divide by 3: x = 7.
 
-Q: Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?
-A: Matrices organize this as A·v = b where A = [[1,1], [1,-1]], v = [x,y]ᵀ, b = [5,1]ᵀ. Solve via A⁻¹b: x = 3, y = 2.
+Q: What is the quadratic formula?
+A: x = (-b ± √(b² - 4ac)) / 2a.
 
-Q: Factor x² + 7x + 12
-A: Two numbers that multiply to 12 and add to 7 are 3 and 4. So x² + 7x + 12 = (x + 3)(x + 4).
+Q: Expand (x + 2)(x - 2)
+A: This is a difference of squares: x² - 4.
 
 Now answer:"""
             system = "You are an expert algebra tutor. Show clear mathematical reasoning."
@@ -296,17 +296,14 @@ Now answer:"""
         elif subject == "geography":
             few_shot = """Examples:
 
-Q: What's the highest point in South America?
-A: Aconcagua (6,961 m) in Argentina.
+Q: What is the capital of France?
+A: Paris.
 
-Q: Which country is known as the 'Land of the Thunder Dragon'?
-A: Bhutan.
+Q: Which river is the longest in the world?
+A: The Nile River (though the Amazon is contended).
 
-Q: What are the Llanos?
-A: Vast tropical grasslands in Venezuela and eastern Colombia.
-
-Q: What is the largest hot desert?
-A: The Sahara in North Africa, approximately 9 million km².
+Q: In which continent is the Sahara Desert located?
+A: Africa.
 
 Now answer:"""
             system = "You are an expert geographer. Provide precise facts and locations."
@@ -314,14 +311,14 @@ Now answer:"""
         elif subject == "history":
             few_shot = """Examples:
 
-Q: When did World War II end?
-A: 1945. Germany surrendered May 7-8 (V-E Day), Japan August 15 (V-J Day).
+Q: Who was the first Emperor of Rome?
+A: Augustus Caesar (Octavian).
 
-Q: In what ways did the Industrial Revolution influence political ideologies?
-A: It fueled classical liberalism (free markets, rights), sparked socialism and Marxism (worker response to inequality), and provoked conservative reactions. Led to labor movements and social democracy.
+Q: When did the Titanic sink?
+A: April 15, 1912.
 
-Q: Who was the first US President?
-A: George Washington (1789-1797).
+Q: What was the main cause of World War I?
+A: The assassination of Archduke Franz Ferdinand, along with alliances, imperialism, and nationalism.
 
 Now answer:"""
             system = "You are an expert historian. Provide dates, causes, effects, and context."

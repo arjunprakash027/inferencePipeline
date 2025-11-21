@@ -102,8 +102,8 @@ class ServerInferencePipeline:
     def __init__(self):
         """Initialize pipeline and start server"""
         self.server = None
-        # Use the q4_0 draft model as the main model for speed
-        self.model_path = Path("./gguf_cache/model_q4_0_draft.gguf")
+        # Use q8_0 model for higher accuracy
+        self.model_path = Path("./gguf_cache/model_q8.gguf")
         
         if not self.model_path.exists():
             raise FileNotFoundError(f"Model not found at {self.model_path}. Please run the normal pipeline once to convert it.")
@@ -123,26 +123,32 @@ class ServerInferencePipeline:
         """Enhanced prompts with few-shot examples"""
         if subject == "algebra":
             few_shot = """Examples:
-Q: What kind of function has a graph that is a straight line?
-A: A linear function: y = mx + b.
-Q: Factor x² + 7x + 12
-A: (x + 3)(x + 4).
+Q: Solve for x: 3x - 7 = 14
+A: Add 7 to both sides: 3x = 21. Divide by 3: x = 7.
+Q: What is the quadratic formula?
+A: x = (-b ± √(b² - 4ac)) / 2a.
+Q: Expand (x + 2)(x - 2)
+A: This is a difference of squares: x² - 4.
 Now answer:"""
             system = "You are an expert algebra tutor."
         elif subject == "geography":
             few_shot = """Examples:
-Q: What's the highest point in South America?
-A: Aconcagua.
-Q: What is the largest hot desert?
-A: The Sahara.
+Q: What is the capital of France?
+A: Paris.
+Q: Which river is the longest in the world?
+A: The Nile River (though the Amazon is contended).
+Q: In which continent is the Sahara Desert located?
+A: Africa.
 Now answer:"""
             system = "You are an expert geographer."
         elif subject == "history":
             few_shot = """Examples:
-Q: When did World War II end?
-A: 1945.
-Q: Who was the first US President?
-A: George Washington.
+Q: Who was the first Emperor of Rome?
+A: Augustus Caesar (Octavian).
+Q: When did the Titanic sink?
+A: April 15, 1912.
+Q: What was the main cause of World War I?
+A: The assassination of Archduke Franz Ferdinand, along with alliances, imperialism, and nationalism.
 Now answer:"""
             system = "You are an expert historian."
         else:
