@@ -60,12 +60,8 @@ if __name__ == '__main__':
     print(f"[MAIN] Loaded {len(questions)} questions")
 
     # Initialize pipeline based on method
-    if args.method == "server":
-        from inferencePipeline.server_pipeline import loadServerPipeline
-        pipeline = loadServerPipeline()
-    else:
-        from inferencePipeline import loadPipeline
-        pipeline = loadPipeline()
+    from inferencePipeline import loadPipeline
+    pipeline = loadPipeline(method=args.method)
 
     # Run inference with simple timing
     start_time = time.perf_counter()

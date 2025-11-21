@@ -6,12 +6,12 @@ Uses llama-server for high-throughput concurrent inference.
 import os
 import time
 import atexit
-import requests
+import asyncio
+import aiohttp
 import subprocess
 import multiprocessing
 from pathlib import Path
 from typing import List, Dict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class LlamaServer:
     """Manages the llama-server process"""
@@ -39,21 +39,24 @@ class LlamaServer:
             "--host", self.host,
             "--port", str(self.port),
             "-c", "2048",           # Context size
-            "-ngl", str(n_gpu_layers), # GPU layers
+            "-ngl", str(n_gpu_layers), # GPU layers (0 for CPU)
             "--parallel", "8",      # Max concurrent requests
             "-cb",                  # Continuous batching
-            "--log-disable"         # Reduce log noise
         ]
         
         print(f"[SERVER] Starting llama-server on port {self.port}...")
         
+        # Show output for debugging
         self.process = subprocess.Popen(
             cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
         
-        # Wait for health check
+        import requests
+        
+        # Wait for health check (synchronous to avoid event loop issues during init)
         print("[SERVER] Waiting for server to be ready...")
         for i in range(30):  # Wait up to 30 seconds
             try:
@@ -61,10 +64,22 @@ class LlamaServer:
                 if response.status_code == 200:
                     print("[SERVER] ✓ Server is ready!")
                     return
-            except requests.exceptions.ConnectionError:
-                pass
+            except requests.exceptions.ConnectionError as e:
+                if i == 0:  # First attempt
+                    print(f"[SERVER] Waiting... (ConnectionError)")
             time.sleep(1)
-            
+        
+        # Server failed - show error output
+        print("[SERVER] ✗ Health check failed. Server output:")
+        if self.process.poll() is not None:  # Process ended
+            stdout, stderr = self.process.communicate()
+            if stdout:
+                print(f"STDOUT:\n{stdout[:2000]}")
+            if stderr:
+                print(f"STDERR:\n{stderr[:2000]}")
+        else:
+            print("[SERVER] Process is still running but not responsive")
+        
         self.stop()
         raise RuntimeError("Server failed to start in 30 seconds")
 
@@ -79,8 +94,8 @@ class LlamaServer:
                 self.process.kill()
             self.process = None
 
-    def completion(self, prompt: str, max_tokens: int = 100) -> str:
-        """Send completion request"""
+    async def completion(self, session: aiohttp.ClientSession, prompt: str, max_tokens: int = 100) -> str:
+        """Send completion request (async)"""
         data = {
             "prompt": prompt,
             "n_predict": max_tokens,
@@ -89,11 +104,12 @@ class LlamaServer:
         }
         
         try:
-            response = requests.post(f"{self.base_url}/completion", json=data)
-            if response.status_code == 200:
-                return response.json()['content'].strip()
-            else:
-                return f"Error: {response.status_code}"
+            async with session.post(f"{self.base_url}/completion", json=data) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    return result['content'].strip()
+                else:
+                    return f"Error: {response.status}"
         except Exception as e:
             return f"Error: {e}"
 
@@ -160,9 +176,11 @@ Now answer:"""
         return 'general'
 
     def __call__(self, questions: List[Dict]) -> List[Dict]:
-        """Main inference function - Concurrent HTTP requests"""
-        results = []
-        
+        """Main inference function - Concurrent async HTTP requests"""
+        return asyncio.run(self._async_call(questions))
+    
+    async def _async_call(self, questions: List[Dict]) -> List[Dict]:
+        """Async implementation of inference"""
         # Prepare all prompts
         tasks = []
         for q in questions:
@@ -171,22 +189,23 @@ Now answer:"""
             max_tokens = self.token_limits[subject]
             tasks.append((q['questionID'], prompt, max_tokens))
         
-        # Execute concurrently
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            future_to_qid = {
-                executor.submit(self.server.completion, prompt, max_tokens): qid 
+        # Execute concurrently with aiohttp
+        async with aiohttp.ClientSession() as session:
+            async_tasks = [
+                self._process_single(session, qid, prompt, max_tokens)
                 for qid, prompt, max_tokens in tasks
-            }
-            
-            for future in as_completed(future_to_qid):
-                qid = future_to_qid[future]
-                try:
-                    answer = future.result()
-                except Exception as e:
-                    answer = f"Error: {e}"
-                results.append({"questionID": qid, "answer": answer})
+            ]
+            results = await asyncio.gather(*async_tasks)
         
-        return results
+        return list(results)
+    
+    async def _process_single(self, session: aiohttp.ClientSession, qid: str, prompt: str, max_tokens: int) -> Dict:
+        """Process a single question asynchronously"""
+        try:
+            answer = await self.server.completion(session, prompt, max_tokens)
+        except Exception as e:
+            answer = f"Error: {e}"
+        return {"questionID": qid, "answer": answer}
 
 def loadServerPipeline():
     """Factory function"""
