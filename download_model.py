@@ -42,6 +42,10 @@ models = [
     #     "name": "Qwen3-0.6B"
     # },
     {
+        "repo_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "name": "Llama-3.1-8B-Instruct"
+    },
+    {
         "repo_id": "Qwen/Qwen3-1.7B",
         "name": "Qwen3-1.7B"
     }
