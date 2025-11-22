@@ -5,7 +5,7 @@ Efficient LLM Inference Pipeline with vLLM
 OPTIMIZATIONS:
 ✅ vLLM for fast inference with Qwen 4B
 ✅ FP16 precision for T4 GPU
-✅ Speculative decoding with Qwen2.5-0.5B draft model
+✅ Aggressive batch processing and throughput optimization
 ✅ Batched processing by subject
 ✅ Few-shot prompting for Chinese and Algebra
 ✅ Answer extraction (returns only final answers, not reasoning)
@@ -22,7 +22,6 @@ from pathlib import Path
 
 # Configuration
 MODEL_NAME = "Qwen/Qwen3-4B"
-DRAFT_MODEL_NAME = "Qwen/Qwen3-0.6B"  # Draft model for speculative decoding
 CACHE_DIR = "/app/models"
 
 
@@ -54,14 +53,6 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
 
 RAW_MODEL_PATH = find_model_path(MODEL_NAME, CACHE_DIR)
 
-# Try to find draft model, fallback to None if not available
-try:
-    DRAFT_MODEL_PATH = find_model_path(DRAFT_MODEL_NAME, CACHE_DIR)
-    print(f"✅ Draft model found: {DRAFT_MODEL_PATH}")
-except FileNotFoundError:
-    DRAFT_MODEL_PATH = None
-    print(f"⚠️  Draft model not found, speculative decoding disabled")
-
 
 class InferencePipeline:
     """
@@ -80,17 +71,9 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # Configure speculative decoding if draft model is available
-        speculative_config = {}
-        if DRAFT_MODEL_PATH:
-            print("🚀 Loading Qwen 4B with Speculative Decoding (0.5B draft model)...")
-            speculative_config = {
-                "speculative_model": DRAFT_MODEL_PATH,
-                "num_speculative_tokens": 5,  # Number of tokens draft model predicts
-                "speculative_draft_tensor_parallel_size": 1,
-            }
-        else:
-            print("🚀 Loading Qwen 4B model with vLLM (FP16 + Optimizations)...")
+        # vLLM doesn't support speculative decoding via LLM() parameters
+        # Using aggressive optimizations instead for maximum speed
+        print("🚀 Loading Qwen 4B model with vLLM (FP16 + Aggressive Optimizations)...")
 
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
@@ -103,7 +86,6 @@ class InferencePipeline:
             enable_prefix_caching=True,       # Cache few-shot examples (proven speedup)
             trust_remote_code=True,
             tensor_parallel_size=1,
-            **speculative_config,             # Add speculative decoding if available
         )
 
         self.tokenizer = self.llm.get_tokenizer()
