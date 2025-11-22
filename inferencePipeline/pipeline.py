@@ -111,12 +111,12 @@ class InferencePipeline:
             skip_special_tokens=True,
         )
 
-        # Sampling parameters for History/Geography (fast)
+        # Sampling parameters for History/Geography/Finance
         self.params_general = SamplingParams(
-            temperature=0.12,  # Lower for determinism and speed
-            top_p=0.88,
-            max_tokens=240,    # Slightly reduced for speed
-            stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],
+            temperature=0.1,   # Very low for factual accuracy
+            top_p=0.9,
+            max_tokens=320,    # Increased to prevent truncation
+            stop=["<|im_end|>", "\n\nQuestion:", "\n\n", "\n\nExample"],
             skip_special_tokens=True,
         )
 
@@ -193,8 +193,18 @@ Problem: {question}
 Answer:"""
 
         else:
-            # History/Geography - direct answer format
-            prompt = f"""Answer this question directly and concisely. Provide ONLY the answer, NO explanation.
+            # History/Geography/Finance - strict answer-only format
+            prompt = f"""You must answer with ONLY the final answer. Do NOT say "Okay", "The user is asking", or provide any explanation.
+
+Example 1:
+Question: Who discovered America?
+Answer: Christopher Columbus
+
+Example 2:
+Question: What is GDP?
+Answer: Gross Domestic Product, the total value of goods and services produced in a country.
+
+Now answer this question with ONLY the answer, nothing else:
 
 Question: {question}
 Answer:"""
@@ -358,7 +368,7 @@ Answer:"""
                     "answer": answer
                 }
 
-        # Batch C: General questions (History, Geography, etc.)
+        # Batch C: General questions (History, Geography, Finance, etc.)
         if general_prompts:
             print(f"📖 Processing {len(general_prompts)} general questions...")
 
@@ -366,7 +376,20 @@ Answer:"""
 
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
-                answer = self._strip_thinking(raw_answer)
+
+                # Strip reasoning prefixes aggressively
+                reasoning_phrases = [
+                    r'^(?:Okay|So|Well|Alright|Let me|The user is asking|The question is).*?\.',
+                    r'^(?:I need to|I will|Let\'s|First|To answer).*?\.',
+                ]
+                for phrase in reasoning_phrases:
+                    raw_answer = re.sub(phrase, '', raw_answer, flags=re.IGNORECASE)
+
+                answer = self._strip_thinking(raw_answer.strip())
+
+                # If answer is empty, return fallback
+                if not answer or len(answer) < 3:
+                    answer = raw_answer.strip() if raw_answer.strip() else "Answer not available"
 
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
