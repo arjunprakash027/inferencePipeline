@@ -113,13 +113,27 @@ class InferencePipeline:
             }
             print("✓ Config ready")
 
+            # Prepare calibration data (minimal for speed)
+            print("[3/4] Preparing calibration data...")
+            calib_data = [
+                "What is the capital of France?",
+                "Calculate 25 + 37.",
+                "Explain the significance of the Great Wall of China.",
+                "Solve for x: 2x + 5 = 15",
+                "请用中文回答：中国的首都是哪里？",
+                "What is 100 divided by 4?",
+                "Describe the location of Mount Everest.",
+                "If a train travels 60 km/h for 2 hours, how far does it go?"
+            ]
+            print("✓ Calibration data ready")
+
             # Quantize with fast calibration
-            print("[3/4] Quantizing (this takes 2-3 minutes)...")
-            model.quantize(tokenizer, quant_config=quant_config)
+            print("[4/5] Quantizing (this takes 2-3 minutes)...")
+            model.quantize(tokenizer, quant_config=quant_config, calib_data=calib_data)
             print("✓ Quantization complete")
 
             # Save quantized model
-            print(f"[4/4] Saving to {QUANT_PATH}...")
+            print(f"[5/5] Saving to {QUANT_PATH}...")
             model.save_quantized(QUANT_PATH)
             tokenizer.save_pretrained(QUANT_PATH)
             print("✓ Saved")
