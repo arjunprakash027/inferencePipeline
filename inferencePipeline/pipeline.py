@@ -71,11 +71,12 @@ class InferencePipeline:
         print("🚀 Loading model with vLLM (FP16)...")
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
-            dtype="float16",                  # FP16 is fine for T4
+            dtype="half",                     # FP16 for compute
             gpu_memory_utilization=0.90,      # Conservative for stability
-            max_model_len=4096,
-            enforce_eager=True,               # T4 stability
-            max_num_seqs=32,                  # Good batch size
+            #quantization="bitsandbytes",           # Dynamic quantization
+            max_model_len=2048,               # Reduced for speed/memory
+            enforce_eager=False,              # Enable CUDA graphs for speed
+            max_num_seqs=64,                  # Increased batch size
             max_num_batched_tokens=8192,
             trust_remote_code=True,
             tensor_parallel_size=1,
