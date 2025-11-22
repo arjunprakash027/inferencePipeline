@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 # Configuration
-MODEL_NAME = "Qwen/Qwen2.5-4B-Instruct"
+MODEL_NAME = "Qwen/Qwen3-4B-Instruct"
 CACHE_DIR = "/app/models"
 
 
