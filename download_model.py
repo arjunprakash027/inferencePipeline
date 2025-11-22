@@ -48,6 +48,10 @@ models = [
     {
         "repo_id": "Qwen/Qwen3-1.7B",
         "name": "Qwen3-1.7B"
+    },
+    {
+        "repo_id": "Qwen/Qwen2.5-0.5B-Instruct",
+        "name": "Qwen2.5-0.5B-Instruct"
     }
 ]
 
