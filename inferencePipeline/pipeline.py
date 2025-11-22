@@ -101,11 +101,12 @@ class InferencePipeline:
             skip_special_tokens=True,
         )
 
-        # Sampling parameters for Algebra (accuracy focused, best quality)
+        # Sampling parameters for Algebra (self-consistency for accuracy)
         self.params_algebra = SamplingParams(
-            temperature=0.05,  # Very deterministic for math
+            temperature=0.3,   # Higher for diverse solutions
             top_p=0.95,        # High for complex reasoning
             max_tokens=600,    # Optimized for algebra complexity
+            n=3,               # Generate 3 candidate solutions
             stop=["<|im_end|>", "\n\nProblem:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
@@ -129,6 +130,27 @@ class InferencePipeline:
         # Remove standalone <think> or </think> tags
         text = re.sub(r'</?think>', '', text)
         return text.strip()
+
+    def _majority_vote(self, candidates: List[str]) -> str:
+        """Pick most common answer from multiple candidates (self-consistency)"""
+        from collections import Counter
+
+        # Normalize candidates (strip whitespace, lowercase for comparison)
+        normalized = [c.strip().lower() for c in candidates if c.strip()]
+
+        if not normalized:
+            return candidates[0] if candidates else ""
+
+        # Count occurrences
+        counter = Counter(normalized)
+        most_common = counter.most_common(1)[0][0]
+
+        # Return original (non-normalized) version
+        for i, norm in enumerate(normalized):
+            if norm == most_common:
+                return candidates[i].strip()
+
+        return candidates[0]
 
 
     def _create_chat_prompt(self, question: str, subject: str = "general") -> str:
@@ -310,16 +332,23 @@ Answer:"""
                     "answer": answer
                 }
 
-        # Batch B: Algebra questions (special handling)
+        # Batch B: Algebra questions (self-consistency with majority voting)
         if algebra_prompts:
-            print(f"🔢 Processing {len(algebra_prompts)} Algebra questions...")
+            print(f"🔢 Processing {len(algebra_prompts)} Algebra questions (3x for accuracy)...")
 
             algebra_outputs = self.llm.generate(algebra_prompts, self.params_algebra, use_tqdm=False)
 
             for idx, output in zip(algebra_indices, algebra_outputs):
-                raw_answer = output.outputs[0].text.strip()
-                raw_answer = self._strip_thinking(raw_answer)
-                answer = self._extract_final_answer(raw_answer, 'algebra')
+                # Get all 3 candidate solutions (n=3 in params)
+                candidates = []
+                for candidate_output in output.outputs:
+                    raw = candidate_output.text.strip()
+                    raw = self._strip_thinking(raw)
+                    extracted = self._extract_final_answer(raw, 'algebra')
+                    candidates.append(extracted)
+
+                # Majority vote among the 3 solutions
+                answer = self._majority_vote(candidates)
 
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
