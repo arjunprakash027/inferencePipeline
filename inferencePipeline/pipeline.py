@@ -6,11 +6,10 @@ OPTIMIZATIONS:
 ✅ vLLM for fast inference
 ✅ FP16 precision for T4 GPU
 ✅ Batched processing
-✅ Python calculator for math
+✅ Reasoning enabled for Chinese and Algebra
 """
 
 import os
-import re
 from typing import List, Dict
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
@@ -18,7 +17,7 @@ from pathlib import Path
 
 
 # Configuration
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
+MODEL_NAME = "Qwen/Qwen2.5-4B-Instruct"
 CACHE_DIR = "/app/models"
 
 
@@ -57,23 +56,22 @@ class InferencePipeline:
 
     Strategy:
     1. Quantize model during untimed setup (loadPipeline)
-    2. Batch ALL math questions together
-    3. Batch ALL text questions together
+    2. Batch questions by subject with reasoning control
+    3. Enable reasoning for Chinese and Algebra
     4. Maximum throughput with vLLM
     """
 
     def __init__(self):
         """
         Initialize pipeline with vLLM (FP16)
-        Simplified: no quantization needed for 3B model on T4
+        Simplified: no quantization needed for 4B model on T4
         """
 
-        print("🚀 Loading model with vLLM (FP16)...")
+        print("🚀 Loading Qwen 4B model with vLLM (FP16)...")
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
             gpu_memory_utilization=0.90,      # Conservative for stability
-            #quantization="bitsandbytes",           # Dynamic quantization
             max_model_len=2048,               # Reduced for speed/memory
             enforce_eager=False,              # Enable CUDA graphs for speed
             max_num_seqs=64,                  # Increased batch size
@@ -84,46 +82,33 @@ class InferencePipeline:
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters
-        self.params_math = SamplingParams(
-            temperature=0.0,
-            max_tokens=128,
-            stop=["```", "\n\n", ";"],
+        # Sampling parameters with reasoning enabled
+        self.params_reasoning = SamplingParams(
+            temperature=0.3,
+            top_p=0.9,
+            max_tokens=1024,
+            stop=["<|im_end|>", "\n\nQuestion:"],
         )
 
-        self.params_text = SamplingParams(
+        # Sampling parameters without reasoning
+        self.params_no_reasoning = SamplingParams(
             temperature=0.3,
             top_p=0.9,
             max_tokens=512,
-            stop=["<|eot_id|>", "\n\nQuestion:"],
+            stop=["<|im_end|>", "\n\nQuestion:"],
         )
 
         print("✅ Pipeline ready for inference\n")
 
-    def _safe_eval(self, code: str) -> str:
-        """Execute Python math expression safely"""
-        try:
-            # Remove any non-math characters
-            clean = re.sub(r"[^0-9\.\+\-\*\/\(\)\%\s]", "", code).strip()
-            if not clean:
-                return None
+    def _create_chat_prompt(self, question: str, enable_reasoning: bool = False) -> str:
+        """Create prompt using Qwen chat template with optional reasoning"""
+        if enable_reasoning:
+            # Add reasoning instruction for Chinese and Algebra
+            prompt = f"Think step-by-step and provide a detailed answer.\n\n{question}"
+        else:
+            prompt = question
 
-            # Execute safely
-            result = eval(clean, {"__builtins__": None}, {})
-
-            # Format result
-            if isinstance(result, float):
-                if result.is_integer():
-                    return str(int(result))
-                return f"{result:.6g}"
-            return str(result)
-
-        except:
-            return None
-
-    def _create_chat_prompt(self, question: str) -> str:
-        """Create prompt using Llama chat template"""
-        messages = [{"role": "user", "content": question}]
+        messages = [{"role": "user", "content": prompt}]
         return self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -132,10 +117,10 @@ class InferencePipeline:
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """
-        Main inference method with DOUBLE BATCHING
+        Main inference method with reasoning-based batching
 
-        Critical fix: Batch ALL math, then batch ALL text
-        NO sequential processing!
+        Reasoning enabled for: Chinese, Algebra
+        No reasoning for: History, Geography
         """
 
         if not questions:
@@ -144,76 +129,57 @@ class InferencePipeline:
         results = [None] * len(questions)
 
         # =====================================================================
-        # PHASE 1: BATCH SORTING
+        # PHASE 1: BATCH SORTING BY REASONING REQUIREMENT
         # =====================================================================
 
-        math_indices = []
-        math_prompts = []
+        reasoning_indices = []
+        reasoning_prompts = []
 
-        text_indices = []
-        text_prompts = []
+        no_reasoning_indices = []
+        no_reasoning_prompts = []
 
         for i, q in enumerate(questions):
-            subject = q.get('subject', 'general')
-            question_text = q['question'].lower()
+            subject = q.get('subject', 'general').lower()
 
-            # Detect math questions
-            is_math = (
-                subject == 'algebra' or
-                'calculate' in question_text or
-                'solve' in question_text or
-                re.search(r'\d+\s*[\+\-\*×÷\/]\s*\d+', question_text)
-            )
+            # Enable reasoning for Chinese and Algebra
+            needs_reasoning = subject in ['chinese', 'algebra']
 
-            if is_math:
-                math_indices.append(i)
-                # Prompt for code generation
-                prompt = f"""Convert to Python expression. Output ONLY code.
-
-Q: What is 50 + 50?
-A: 50 + 50
-
-Q: {q['question']}
-A: """
-                math_prompts.append(prompt)
+            if needs_reasoning:
+                reasoning_indices.append(i)
+                reasoning_prompts.append(self._create_chat_prompt(q['question'], enable_reasoning=True))
             else:
-                text_indices.append(i)
-                text_prompts.append(self._create_chat_prompt(q['question']))
+                no_reasoning_indices.append(i)
+                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], enable_reasoning=False))
 
         # =====================================================================
-        # PHASE 2: BATCH EXECUTION (CRITICAL FIX!)
+        # PHASE 2: BATCH EXECUTION
         # =====================================================================
 
-        # Batch A: ALL math questions in ONE call
-        if math_prompts:
-            print(f"🧮 Processing {len(math_prompts)} math questions (batched)...")
+        # Batch A: Questions WITH reasoning (Chinese, Algebra)
+        if reasoning_prompts:
+            print(f"🧠 Processing {len(reasoning_prompts)} questions with reasoning (batched)...")
 
-            # CRITICAL: Single batch call for ALL math
-            math_outputs = self.llm.generate(math_prompts, self.params_math, use_tqdm=False)
+            reasoning_outputs = self.llm.generate(reasoning_prompts, self.params_reasoning, use_tqdm=False)
 
-            for idx, output in zip(math_indices, math_outputs):
-                code = output.outputs[0].text.strip()
-                answer = self._safe_eval(code)
+            for idx, output in zip(reasoning_indices, reasoning_outputs):
+                answer = output.outputs[0].text.strip()
 
-                if answer:
-                    # Success! Use calculator result
-                    results[idx] = {
-                        "questionID": questions[idx]["questionID"],
-                        "answer": answer
-                    }
-                else:
-                    # Calculator failed, add to text batch
-                    text_indices.append(idx)
-                    text_prompts.append(self._create_chat_prompt(questions[idx]['question']))
+                # Enforce 5000 char limit
+                if len(answer) > 5000:
+                    answer = answer[:5000].rsplit('. ', 1)[0] + '.'
 
-        # Batch B: ALL text questions in ONE call
-        if text_prompts:
-            print(f"📖 Processing {len(text_prompts)} text questions (batched)...")
+                results[idx] = {
+                    "questionID": questions[idx]["questionID"],
+                    "answer": answer
+                }
 
-            # CRITICAL: Single batch call for ALL text
-            text_outputs = self.llm.generate(text_prompts, self.params_text, use_tqdm=False)
+        # Batch B: Questions WITHOUT reasoning (History, Geography)
+        if no_reasoning_prompts:
+            print(f"📖 Processing {len(no_reasoning_prompts)} questions without reasoning (batched)...")
 
-            for idx, output in zip(text_indices, text_outputs):
+            no_reasoning_outputs = self.llm.generate(no_reasoning_prompts, self.params_no_reasoning, use_tqdm=False)
+
+            for idx, output in zip(no_reasoning_indices, no_reasoning_outputs):
                 answer = output.outputs[0].text.strip()
 
                 # Enforce 5000 char limit
