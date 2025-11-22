@@ -73,8 +73,8 @@ class InferencePipeline:
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.90,      # Conservative for stability
-            max_model_len=2048,               # Reduced for speed/memory
+            gpu_memory_utilization=0.93,      # Slightly higher for better throughput
+            max_model_len=1792,               # Reduced for faster processing (still plenty of room)
             enforce_eager=False,              # Enable CUDA graphs for speed
             max_num_seqs=64,                  # Increased batch size
             max_num_batched_tokens=8192,
@@ -86,20 +86,20 @@ class InferencePipeline:
 
         # Sampling parameters with reasoning enabled
         self.params_reasoning = SamplingParams(
-            temperature=0.3,
+            temperature=0.25,  # Slightly lower for efficiency, still allows creativity
             top_p=0.9,
-            max_tokens=1024,
-            stop=["<|im_end|>", "\n\nQuestion:"],
-            skip_special_tokens=False,  # Keep tokens for now, filter in post-processing
+            max_tokens=768,  # Reduced but still allows thinking space
+            stop=["<|im_end|>", "\n\nQuestion:", "\n\n\n"],  # Added triple newline to catch end of thought
+            skip_special_tokens=True,  # Filter special tokens during generation
         )
 
         # Sampling parameters without reasoning
         self.params_no_reasoning = SamplingParams(
-            temperature=0.3,
+            temperature=0.25,  # Slightly lower for efficiency
             top_p=0.9,
-            max_tokens=512,
-            stop=["<|im_end|>", "\n\nQuestion:"],
-            skip_special_tokens=False,  # Keep tokens for now, filter in post-processing
+            max_tokens=400,  # Reduced but enough for complete answers
+            stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],  # Added double newline stop
+            skip_special_tokens=True,  # Filter special tokens during generation
         )
 
         print("✅ Pipeline ready for inference\n")
@@ -119,34 +119,22 @@ class InferencePipeline:
 
         if subject == "chinese":
             # Few-shot prompting for Chinese questions
-            prompt = f"""Answer the following Chinese question directly and concisely.
+            prompt = f"""Answer the Chinese question clearly and directly.
 
-Example 1:
+Example:
 Question: 下列词语中，加点字的读音完全正确的一项是？
 Answer: 选项B的读音完全正确。
-
-Example 2:
-Question: "春蚕到死丝方尽"中的"丝"字是什么意思？
-Answer: "丝"谐音"思"，表示思念之情。
 
 Question: {question}
 Answer:"""
 
         elif subject == "algebra":
             # Few-shot prompting for Algebra questions
-            prompt = f"""Solve the math problem and provide only the final answer.
+            prompt = f"""Solve the math problem step by step, then provide the final answer.
 
-Example 1:
+Example:
 Question: Solve for x: 2x + 5 = 13
 Answer: x = 4
-
-Example 2:
-Question: If f(x) = 3x² - 2x + 1, what is f(2)?
-Answer: f(2) = 9
-
-Example 3:
-Question: Simplify: (x + 3)(x - 3)
-Answer: x² - 9
 
 Question: {question}
 Answer:"""
