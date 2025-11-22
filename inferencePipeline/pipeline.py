@@ -18,7 +18,7 @@ from awq import AutoAWQForCausalLM
 
 
 # Configuration
-RAW_MODEL_PATH = "./app/models/Llama-3.2-3B-Instruct"
+RAW_MODEL_PATH = "./app/models/meta-llama/Llama-3.2-3B-Instruct"
 QUANT_PATH = "/tmp/llama-3b-awq"  # Ephemeral storage for quantized model
 
 
