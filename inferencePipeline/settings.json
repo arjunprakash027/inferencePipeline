@@ -9,16 +9,16 @@
         "port": 8081,
         "model_file": "model_llama_q4_0.gguf",
         "context_size": 2048,
-        "n_gpu_layers": 0,
+        "n_gpu_layers": -1,
         "parallel_requests": 8,
         "continuous_batching": true,
         "max_workers": 8
     },
     "local": {
-        "device": "cpu",
+        "device": "cuda",
         "torch_dtype": "bfloat16",
         "batch_size": 64,
-        "use_torch_compile": true,
+        "use_torch_compile": false,
         "compile_mode": "reduce-overhead",
         "low_cpu_mem_usage": true
     },

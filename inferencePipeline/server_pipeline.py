@@ -8,6 +8,7 @@ import time
 import atexit
 import asyncio
 import aiohttp
+import platform
 import subprocess
 import multiprocessing
 from pathlib import Path
@@ -29,8 +30,16 @@ class LlamaServer:
         self.base_url = f"http://{self.host}:{self.port}"
         self.process = None
         
-        # Find server binary
-        self.server_bin = Path(__file__).parent / "llama.cpp" / "bin_mac" / "llama-server"
+        # Detect OS and find server binary
+        current_os = platform.system().lower()
+        if "darwin" in current_os:
+            bin_dir = "bin_mac"
+        elif "linux" in current_os:
+            bin_dir = "bin_linux"
+        else:
+            raise RuntimeError(f"Unsupported OS: {current_os}")
+        
+        self.server_bin = Path(__file__).parent / "llama.cpp" / bin_dir / "llama-server"
         if not self.server_bin.exists():
             raise FileNotFoundError(f"llama-server not found at {self.server_bin}")
             
