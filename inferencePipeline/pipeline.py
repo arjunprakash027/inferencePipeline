@@ -91,21 +91,30 @@ class InferencePipeline:
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters with reasoning enabled (speed optimized)
-        self.params_reasoning = SamplingParams(
-            temperature=0.2,  # Lower for faster, more deterministic output
-            top_p=0.85,       # Reduced sampling space for speed
-            max_tokens=384,   # Reduced further - most answers fit in this
-            stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n\n", "答案:", "Answer:"],
+        # Sampling parameters for Chinese (speed optimized)
+        self.params_chinese = SamplingParams(
+            temperature=0.2,
+            top_p=0.85,
+            max_tokens=384,
+            stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n\n", "答案:"],
             skip_special_tokens=True,
         )
 
-        # Sampling parameters without reasoning (very fast)
-        self.params_no_reasoning = SamplingParams(
-            temperature=0.2,  # Lower for speed
-            top_p=0.85,       # Reduced for speed
-            max_tokens=192,   # Short and fast
-            stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n"],
+        # Sampling parameters for Algebra (accuracy optimized)
+        self.params_algebra = SamplingParams(
+            temperature=0.1,  # Very low for math determinism
+            top_p=0.95,       # Higher for reasoning diversity
+            max_tokens=512,   # More space for step-by-step
+            stop=["<|im_end|>", "\n\nProblem:", "\n\nExample"],
+            skip_special_tokens=True,
+        )
+
+        # Sampling parameters for other subjects (very fast)
+        self.params_general = SamplingParams(
+            temperature=0.2,
+            top_p=0.85,
+            max_tokens=192,
+            stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],
             skip_special_tokens=True,
         )
 
@@ -132,12 +141,20 @@ class InferencePipeline:
 答案:"""
 
         elif subject == "algebra":
-            # Streamlined Algebra prompt - concise
-            prompt = f"""Solve this problem and give the final answer.
+            # Optimized algebra prompt - multiple examples, concise
+            prompt = f"""Solve step-by-step and give the final answer.
 
-{question}
+Example 1: Solve 2x + 5 = 13
+2x = 8, x = 4
 
-Answer:"""
+Example 2: Simplify (x+3)(x-3)
+x² - 9
+
+Example 3: If f(x) = 3x² - 2x + 1, find f(2)
+f(2) = 12 - 4 + 1 = 9
+
+Problem: {question}
+Solution:"""
 
         else:
             # Standard prompt for other subjects
@@ -153,13 +170,33 @@ Answer:"""
     def _extract_final_answer(self, text: str, subject: str) -> str:
         """Extract only the final answer from reasoning output"""
 
-        # For Chinese and Algebra, try to extract the final answer
-        if subject in ['chinese', 'algebra']:
-            # Look for patterns like "Answer: ..." or "答案：..." or "Final answer: ..."
+        if subject == 'algebra':
+            # Algebra-specific extraction patterns
             answer_patterns = [
-                r'(?:Final [Aa]nswer|ANSWER|Answer):\s*(.+?)(?:\n\n|\n(?=[A-Z])|$)',
+                r'(?:Final [Aa]nswer|ANSWER):\s*(.+?)(?:\n|$)',
+                r'(?:Answer|answer):\s*(.+?)(?:\n|$)',
+                r'(?:Therefore|Thus|So),?\s+(.+?)(?:\n|$)',
+                r'=\s*([^=\n]+)$',  # Last equation result
+            ]
+
+            for pattern in answer_patterns:
+                match = re.search(pattern, text, re.MULTILINE)
+                if match:
+                    answer = match.group(1).strip()
+                    # Clean up common artifacts
+                    answer = answer.rstrip('.').strip()
+                    return answer
+
+            # Fallback: return last non-empty line
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            if lines:
+                return lines[-1]
+
+        elif subject == 'chinese':
+            # Chinese-specific extraction
+            answer_patterns = [
                 r'(?:答案|最终答案)[:：]\s*(.+?)(?:\n\n|\n|$)',
-                r'(?:Therefore|Thus|So),?\s+(.+?)(?:\n\n|\n|$)',
+                r'(?:Answer|answer):\s*(.+?)(?:\n\n|\n|$)',
                 r'(?:结论|因此)[:：,，]\s*(.+?)(?:\n\n|\n|$)',
             ]
 
@@ -167,14 +204,11 @@ Answer:"""
                 match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
                 if match:
                     answer = match.group(1).strip()
-                    # Clean up the answer
                     answer = re.sub(r'\n+', ' ', answer)
                     return answer
 
-            # If no pattern found, try to get the last substantive line
             lines = [line.strip() for line in text.split('\n') if line.strip()]
             if lines:
-                # Return the last line as the answer
                 return lines[-1]
 
         # For other subjects or if extraction fails, return the full text
@@ -194,50 +228,47 @@ Answer:"""
         results = [None] * len(questions)
 
         # =====================================================================
-        # PHASE 1: BATCH SORTING BY REASONING REQUIREMENT
+        # PHASE 1: BATCH SORTING BY SUBJECT
         # =====================================================================
 
-        reasoning_indices = []
-        reasoning_prompts = []
-        reasoning_subjects = []
+        chinese_indices = []
+        chinese_prompts = []
 
-        no_reasoning_indices = []
-        no_reasoning_prompts = []
+        algebra_indices = []
+        algebra_prompts = []
+
+        general_indices = []
+        general_prompts = []
 
         for i, q in enumerate(questions):
             subject = q.get('subject', 'general').lower()
+            prompt = self._create_chat_prompt(q['question'], subject=subject)
 
-            # Enable reasoning for Chinese and Algebra
-            needs_reasoning = subject in ['chinese', 'algebra']
-
-            if needs_reasoning:
-                reasoning_indices.append(i)
-                reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject))
-                reasoning_subjects.append(subject)
+            if subject == 'chinese':
+                chinese_indices.append(i)
+                chinese_prompts.append(prompt)
+            elif subject == 'algebra':
+                algebra_indices.append(i)
+                algebra_prompts.append(prompt)
             else:
-                no_reasoning_indices.append(i)
-                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject))
+                general_indices.append(i)
+                general_prompts.append(prompt)
 
         # =====================================================================
-        # PHASE 2: BATCH EXECUTION
+        # PHASE 2: BATCH EXECUTION BY SUBJECT
         # =====================================================================
 
-        # Batch A: Questions WITH reasoning (Chinese, Algebra)
-        if reasoning_prompts:
-            print(f"🧠 Processing {len(reasoning_prompts)} questions with reasoning (batched)...")
+        # Batch A: Chinese questions
+        if chinese_prompts:
+            print(f"🇨🇳 Processing {len(chinese_prompts)} Chinese questions...")
 
-            reasoning_outputs = self.llm.generate(reasoning_prompts, self.params_reasoning, use_tqdm=False)
+            chinese_outputs = self.llm.generate(chinese_prompts, self.params_chinese, use_tqdm=False)
 
-            for idx, output, subject in zip(reasoning_indices, reasoning_outputs, reasoning_subjects):
+            for idx, output in zip(chinese_indices, chinese_outputs):
                 raw_answer = output.outputs[0].text.strip()
-                
-                # Remove thinking tags first
                 raw_answer = self._strip_thinking(raw_answer)
+                answer = self._extract_final_answer(raw_answer, 'chinese')
 
-                # Extract final answer (remove reasoning steps)
-                answer = self._extract_final_answer(raw_answer, subject)
-
-                # Enforce 5000 char limit
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
 
@@ -246,19 +277,35 @@ Answer:"""
                     "answer": answer
                 }
 
-        # Batch B: Questions WITHOUT reasoning (History, Geography)
-        if no_reasoning_prompts:
-            print(f"📖 Processing {len(no_reasoning_prompts)} questions without reasoning (batched)...")
+        # Batch B: Algebra questions (special handling)
+        if algebra_prompts:
+            print(f"🔢 Processing {len(algebra_prompts)} Algebra questions...")
 
-            no_reasoning_outputs = self.llm.generate(no_reasoning_prompts, self.params_no_reasoning, use_tqdm=False)
+            algebra_outputs = self.llm.generate(algebra_prompts, self.params_algebra, use_tqdm=False)
 
-            for idx, output in zip(no_reasoning_indices, no_reasoning_outputs):
+            for idx, output in zip(algebra_indices, algebra_outputs):
                 raw_answer = output.outputs[0].text.strip()
-                
-                # Remove thinking tags
+                raw_answer = self._strip_thinking(raw_answer)
+                answer = self._extract_final_answer(raw_answer, 'algebra')
+
+                if len(answer) > 5000:
+                    answer = answer[:5000].rsplit('. ', 1)[0] + '.'
+
+                results[idx] = {
+                    "questionID": questions[idx]["questionID"],
+                    "answer": answer
+                }
+
+        # Batch C: General questions (History, Geography, etc.)
+        if general_prompts:
+            print(f"📖 Processing {len(general_prompts)} general questions...")
+
+            general_outputs = self.llm.generate(general_prompts, self.params_general, use_tqdm=False)
+
+            for idx, output in zip(general_indices, general_outputs):
+                raw_answer = output.outputs[0].text.strip()
                 answer = self._strip_thinking(raw_answer)
 
-                # Enforce 5000 char limit
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
 
