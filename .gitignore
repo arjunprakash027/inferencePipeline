@@ -212,3 +212,4 @@ __marimo__/
 # ML models 
 *.gguf
 ./experiments
+user.pem

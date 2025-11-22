@@ -29,3 +29,6 @@ timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
 2025-11-21 19:12:05,llama_3b_test,server,10,32.82,3281.9,0.3
 2025-11-21 19:18:56,llama_3b_test_diff_temp,server,10,34.79,3479.0,0.29
 2025-11-21 19:19:43,llama_3b_test_diff_temp,server,10,31.8,3179.8,0.31
+2025-11-22 10:02:53,test run,server,10,16.27,1627.1,0.61
+2025-11-22 10:04:35,test run,server,10,18.18,1818.4,0.55
+2025-11-22 12:49:10,default_run,server,10,20.32,2031.6,0.49
