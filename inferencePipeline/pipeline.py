@@ -4,12 +4,13 @@ Efficient LLM Inference Pipeline with vLLM
 
 OPTIMIZATIONS:
 ✅ vLLM for fast inference with Qwen 4B
-✅ FP16 precision for T4 GPU
-✅ Aggressive batch processing and throughput optimization
+✅ FP16 precision for T4 GPU (16GB)
+✅ Memory-optimized batch processing for T4 constraints
 ✅ Batched processing by subject
 ✅ Few-shot prompting for Chinese and Algebra
 ✅ Answer extraction (returns only final answers, not reasoning)
 ✅ Prefix caching for few-shot examples
+✅ CPU swap space for memory overflow handling
 """
 
 import os
@@ -71,30 +72,30 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # vLLM doesn't support speculative decoding via LLM() parameters
-        # Using aggressive optimizations instead for maximum speed
-        print("🚀 Loading Qwen 4B model with vLLM (FP16 + Aggressive Optimizations)...")
+        # Memory-optimized configuration for T4 16GB GPU
+        print("🚀 Loading Qwen 4B model with vLLM (T4 optimized)...")
 
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.95,      # Max out GPU for better throughput
-            max_model_len=1536,               # Optimized for speed
+            gpu_memory_utilization=0.85,      # Conservative for T4 stability
+            max_model_len=1024,               # Reduced context for memory savings
             enforce_eager=False,              # Enable CUDA graphs for speed
-            max_num_seqs=96,                  # Higher batch size for better throughput
-            max_num_batched_tokens=12288,     # Increased batched tokens
-            enable_prefix_caching=True,       # Cache few-shot examples (proven speedup)
+            max_num_seqs=32,                  # Reduced batch size for memory
+            max_num_batched_tokens=4096,      # Lower for memory constraints
+            enable_prefix_caching=True,       # Cache few-shot examples
             trust_remote_code=True,
             tensor_parallel_size=1,
+            swap_space=2,                     # CPU swap space for overflow
         )
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters with reasoning enabled
+        # Sampling parameters with reasoning enabled (memory optimized)
         self.params_reasoning = SamplingParams(
             temperature=0.25,  # Slightly lower for efficiency, still allows creativity
             top_p=0.9,
-            max_tokens=768,  # Reduced but still allows thinking space
+            max_tokens=512,  # Reduced for memory constraints
             stop=["<|im_end|>", "\n\nQuestion:", "\n\n\n"],  # Added triple newline to catch end of thought
             skip_special_tokens=True,  # Filter special tokens during generation
         )
@@ -103,7 +104,7 @@ class InferencePipeline:
         self.params_no_reasoning = SamplingParams(
             temperature=0.25,  # Slightly lower for efficiency
             top_p=0.9,
-            max_tokens=400,  # Reduced but enough for complete answers
+            max_tokens=256,  # Reduced for memory constraints
             stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],  # Added double newline stop
             skip_special_tokens=True,  # Filter special tokens during generation
         )
