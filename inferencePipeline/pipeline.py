@@ -1,12 +1,12 @@
 """
 Tech Arena 2025 - Phase 2
-Efficient LLM Inference Pipeline with Runtime AWQ Quantization
+Efficient LLM Inference Pipeline with vLLM
 
-CRITICAL FIXES:
-✅ Runtime AWQ quantization (during untimed setup)
-✅ Batched math processing (not sequential)
-✅ Double batching strategy (math + text)
-✅ T4-optimized settings
+OPTIMIZATIONS:
+✅ vLLM for fast inference
+✅ FP16 precision for T4 GPU
+✅ Batched processing
+✅ Python calculator for math
 """
 
 import os
@@ -14,14 +14,12 @@ import re
 from typing import List, Dict
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
-from awq import AutoAWQForCausalLM
 from pathlib import Path
 
 
 # Configuration
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-CACHE_DIR = "./app/models"  # Fixed: was "./app/model"
-QUANT_PATH = "/tmp/llama-3b-awq"  # Ephemeral storage for quantized model
+CACHE_DIR = "./app/models"
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -66,24 +64,19 @@ class InferencePipeline:
 
     def __init__(self):
         """
-        Initialize pipeline with RUNTIME AWQ quantization
-        This runs during loadPipeline() - NOT TIMED!
+        Initialize pipeline with vLLM (FP16)
+        Simplified: no quantization needed for 3B model on T4
         """
 
-        # Step 1: Quantize model (untimed)
-        self._prepare_quantized_model()
-
-        # Step 2: Load quantized model with vLLM
-        print("🚀 Loading quantized model with vLLM...")
+        print("🚀 Loading model with vLLM (FP16)...")
         self.llm = LLM(
-            model=QUANT_PATH,             # Load our quantized model
-            quantization="awq",           # Now this flag is VALID!
-            dtype="float16",              # T4 native
-            gpu_memory_utilization=0.95,  # AWQ allows high utilization
+            model=RAW_MODEL_PATH,             # Load directly from HF cache
+            dtype="float16",                  # FP16 is fine for T4
+            gpu_memory_utilization=0.90,      # Conservative for stability
             max_model_len=4096,
-            enforce_eager=True,           # T4 stability
-            max_num_seqs=64,             # High batch enabled by 4-bit
-            max_num_batched_tokens=16384,
+            enforce_eager=True,               # T4 stability
+            max_num_seqs=32,                  # Good batch size
+            max_num_batched_tokens=8192,
             trust_remote_code=True,
             tensor_parallel_size=1,
         )
@@ -105,80 +98,6 @@ class InferencePipeline:
         )
 
         print("✅ Pipeline ready for inference\n")
-
-    def _prepare_quantized_model(self):
-        """
-        CRITICAL: Runtime AWQ quantization during untimed setup
-
-        This is the "magic trick" - we quantize during loadPipeline()
-        which is NOT counted in the latency metrics!
-        """
-
-        if os.path.exists(QUANT_PATH):
-            print(f"✅ Found cached quantized model at {QUANT_PATH}")
-            return
-
-        print("=" * 80)
-        print("⚙️  RUNTIME QUANTIZATION (Untimed Setup Phase)")
-        print("=" * 80)
-
-        try:
-            # Load raw FP16 model
-            print(f"[1/4] Loading raw model from {RAW_MODEL_PATH}...")
-            model = AutoAWQForCausalLM.from_pretrained(
-                RAW_MODEL_PATH,
-                safetensors=True,
-                low_cpu_mem_usage=True,
-            )
-
-            tokenizer = AutoTokenizer.from_pretrained(RAW_MODEL_PATH)
-            print("✓ Model loaded")
-
-            # Configure AWQ 4-bit quantization
-            print("[2/4] Configuring AWQ 4-bit quantization...")
-            quant_config = {
-                "zero_point": True,
-                "q_group_size": 128,
-                "w_bit": 4,
-                "version": "GEMM"
-            }
-            print("✓ Config ready")
-
-            # Prepare calibration data (minimal for speed)
-            print("[3/4] Preparing calibration data...")
-            calib_data = [
-                "What is the capital of France?",
-                "Calculate 25 + 37.",
-                "Explain the significance of the Great Wall of China.",
-                "Solve for x: 2x + 5 = 15",
-                "请用中文回答：中国的首都是哪里？",
-                "What is 100 divided by 4?",
-                "Describe the location of Mount Everest.",
-                "If a train travels 60 km/h for 2 hours, how far does it go?"
-            ]
-            print("✓ Calibration data ready")
-
-            # Quantize with fast calibration
-            print("[4/5] Quantizing (this takes 2-3 minutes)...")
-            model.quantize(tokenizer, quant_config=quant_config, calib_data=calib_data)
-            print("✓ Quantization complete")
-
-            # Save quantized model
-            print(f"[5/5] Saving to {QUANT_PATH}...")
-            model.save_quantized(QUANT_PATH)
-            tokenizer.save_pretrained(QUANT_PATH)
-            print("✓ Saved")
-
-            print("=" * 80)
-            print("✅ QUANTIZATION COMPLETE")
-            print("   Model size: 6GB → 1.5GB (4x reduction)")
-            print("   Speed: 3x faster inference")
-            print("=" * 80 + "\n")
-
-        except Exception as e:
-            print(f"❌ Quantization failed: {e}")
-            print("This will cause vLLM to crash - fix required!")
-            raise e
 
     def _safe_eval(self, code: str) -> str:
         """Execute Python math expression safely"""
