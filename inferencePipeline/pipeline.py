@@ -388,24 +388,40 @@ Answer:"""
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
 
-                # AGGRESSIVE CLEANUP: Remove all reasoning/meta-commentary
-                # Remove entire sentences that start with reasoning phrases
-                lines = raw_answer.split('\n')
-                cleaned_lines = []
-
+                # ULTRA-AGGRESSIVE CLEANUP: Remove all reasoning/meta-commentary
+                # Works on both lines AND sentences
                 reasoning_starts = [
                     'okay', 'so', 'well', 'alright', 'let me', 'the user',
                     'i need', 'i will', "let's", 'first', 'to answer',
-                    'the question', 'they want', 'i should'
+                    'the question', 'they want', 'i should', 'looking at',
+                    'in the context', 'however', 'alternatively', 'wait',
+                    'for instance', 'for example', 'in some', 'but',
+                    'this area', 'this is', 'the most', 'the exact'
                 ]
 
+                # First, split by lines
+                lines = raw_answer.split('\n')
+                cleaned_lines = []
                 for line in lines:
                     line_lower = line.strip().lower()
-                    # Skip lines that start with reasoning phrases
                     if line_lower and not any(line_lower.startswith(phrase) for phrase in reasoning_starts):
                         cleaned_lines.append(line.strip())
 
-                answer = ' '.join(cleaned_lines).strip()
+                # Then split by sentences and filter again
+                text = ' '.join(cleaned_lines)
+                sentences = [s.strip() for s in text.split('.') if s.strip()]
+                cleaned_sentences = []
+                for sentence in sentences:
+                    sentence_lower = sentence.strip().lower()
+                    if sentence_lower and not any(sentence_lower.startswith(phrase) for phrase in reasoning_starts):
+                        cleaned_sentences.append(sentence.strip())
+
+                # Take only the first clean sentence (the actual answer)
+                if cleaned_sentences:
+                    answer = cleaned_sentences[0] + '.'
+                else:
+                    answer = ''
+
                 answer = self._strip_thinking(answer)
 
                 # If answer is still empty or too short, it's a failure
