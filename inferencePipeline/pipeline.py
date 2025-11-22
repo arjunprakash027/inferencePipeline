@@ -113,10 +113,10 @@ class InferencePipeline:
 
         # Sampling parameters for History/Geography/Finance
         self.params_general = SamplingParams(
-            temperature=0.1,   # Very low for factual accuracy
-            top_p=0.9,
-            max_tokens=320,    # Increased to prevent truncation
-            stop=["<|im_end|>", "\n\nQuestion:", "\n\n", "\n\nExample"],
+            temperature=0.2,   # Slightly higher to avoid getting stuck
+            top_p=0.92,
+            max_tokens=384,    # More space for complete factual answers
+            stop=["<|im_end|>", "\n\nQuestion:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
 
@@ -193,18 +193,29 @@ Problem: {question}
 Answer:"""
 
         else:
-            # History/Geography/Finance - strict answer-only format
-            prompt = f"""You must answer with ONLY the final answer. Do NOT say "Okay", "The user is asking", or provide any explanation.
+            # History/Geography/Finance - ULTRA strict answer-only format
+            prompt = f"""IMPORTANT: Answer with ONLY the factual answer. Do NOT include ANY of these:
+- "Okay"
+- "The user is asking"
+- "Let me think"
+- "I need to"
+- Any meta-commentary
+
+Just give the direct answer.
 
 Example 1:
 Question: Who discovered America?
-Answer: Christopher Columbus
+Answer: Christopher Columbus in 1492
 
 Example 2:
-Question: What is GDP?
-Answer: Gross Domestic Product, the total value of goods and services produced in a country.
+Question: What is the highest point in South America?
+Answer: Mount Aconcagua in Argentina (6,961 meters)
 
-Now answer this question with ONLY the answer, nothing else:
+Example 3:
+Question: Who won World War 2?
+Answer: The Allied Powers (United States, Soviet Union, United Kingdom, and France)
+
+Now answer ONLY with the factual answer:
 
 Question: {question}
 Answer:"""
@@ -377,19 +388,39 @@ Answer:"""
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
 
-                # Strip reasoning prefixes aggressively
-                reasoning_phrases = [
-                    r'^(?:Okay|So|Well|Alright|Let me|The user is asking|The question is).*?\.',
-                    r'^(?:I need to|I will|Let\'s|First|To answer).*?\.',
+                # AGGRESSIVE CLEANUP: Remove all reasoning/meta-commentary
+                # Remove entire sentences that start with reasoning phrases
+                lines = raw_answer.split('\n')
+                cleaned_lines = []
+
+                reasoning_starts = [
+                    'okay', 'so', 'well', 'alright', 'let me', 'the user',
+                    'i need', 'i will', "let's", 'first', 'to answer',
+                    'the question', 'they want', 'i should'
                 ]
-                for phrase in reasoning_phrases:
-                    raw_answer = re.sub(phrase, '', raw_answer, flags=re.IGNORECASE)
 
-                answer = self._strip_thinking(raw_answer.strip())
+                for line in lines:
+                    line_lower = line.strip().lower()
+                    # Skip lines that start with reasoning phrases
+                    if line_lower and not any(line_lower.startswith(phrase) for phrase in reasoning_starts):
+                        cleaned_lines.append(line.strip())
 
-                # If answer is empty, return fallback
-                if not answer or len(answer) < 3:
-                    answer = raw_answer.strip() if raw_answer.strip() else "Answer not available"
+                answer = ' '.join(cleaned_lines).strip()
+                answer = self._strip_thinking(answer)
+
+                # If answer is still empty or too short, it's a failure
+                if not answer or len(answer) < 5:
+                    # Try to extract from raw answer as last resort
+                    if raw_answer and len(raw_answer) > 10:
+                        # Take the last sentence that's not reasoning
+                        sentences = [s.strip() for s in raw_answer.split('.') if s.strip()]
+                        for sentence in reversed(sentences):
+                            if not any(sentence.lower().startswith(phrase) for phrase in reasoning_starts):
+                                answer = sentence + '.'
+                                break
+
+                    if not answer or len(answer) < 5:
+                        answer = "Unable to generate answer"
 
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
