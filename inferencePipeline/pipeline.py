@@ -100,12 +100,12 @@ class InferencePipeline:
             skip_special_tokens=True,
         )
 
-        # Sampling parameters for Algebra (accuracy optimized)
+        # Sampling parameters for Algebra (accuracy optimized, more tokens)
         self.params_algebra = SamplingParams(
-            temperature=0.1,  # Very low for math determinism
-            top_p=0.95,       # Higher for reasoning diversity
-            max_tokens=512,   # More space for step-by-step
-            stop=["<|im_end|>", "\n\nProblem:", "\n\nExample"],
+            temperature=0.05,  # Very very low - math must be deterministic
+            top_p=0.95,        # Keep high for complex reasoning
+            max_tokens=896,    # Much more space for complex problems
+            stop=["<|im_end|>", "\n\nProblem:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
 
@@ -141,20 +141,33 @@ class InferencePipeline:
 答案:"""
 
         elif subject == "algebra":
-            # Optimized algebra prompt - multiple examples, concise
-            prompt = f"""Solve step-by-step and give the final answer.
+            # Direct answer format - NO reasoning, just answer
+            prompt = f"""You are a math expert. Solve the problem and provide ONLY the final answer. Do NOT explain your work.
 
-Example 1: Solve 2x + 5 = 13
-2x = 8, x = 4
+Example 1:
+Problem: Solve for x: 2x + 5 = 13
+Answer: x = 4
 
-Example 2: Simplify (x+3)(x-3)
-x² - 9
+Example 2:
+Problem: Simplify (x+3)(x-3)
+Answer: x² - 9
 
-Example 3: If f(x) = 3x² - 2x + 1, find f(2)
-f(2) = 12 - 4 + 1 = 9
+Example 3:
+Problem: If f(x) = 3x² - 2x + 1, find f(2)
+Answer: 9
+
+Example 4:
+Problem: What is the derivative of x² + 3x?
+Answer: 2x + 3
+
+Example 5:
+Problem: Solve the system: x + y = 5, x - y = 1
+Answer: x = 3, y = 2
+
+Now solve this problem. Give ONLY the final answer, NO explanation:
 
 Problem: {question}
-Solution:"""
+Answer:"""
 
         else:
             # Standard prompt for other subjects
@@ -171,24 +184,40 @@ Solution:"""
         """Extract only the final answer from reasoning output"""
 
         if subject == 'algebra':
-            # Algebra-specific extraction patterns
+            # Strip any reasoning/thinking prefixes
+            # Remove lines starting with "Okay", "So", "Let me", etc.
+            reasoning_prefixes = [
+                r'^(?:Okay|So|Let me|First|Now|Here|The user|To solve|We need).*?\n',
+                r'^(?:I need to|I will|Let\'s|Step \d+).*?\n',
+            ]
+            for prefix in reasoning_prefixes:
+                text = re.sub(prefix, '', text, flags=re.IGNORECASE | re.MULTILINE)
+
+            # Aggressive extraction - prioritize "Answer:" pattern
             answer_patterns = [
+                r'Answer:\s*(.+?)(?:\n\n|\n(?=Problem)|$)',  # Most specific
                 r'(?:Final [Aa]nswer|ANSWER):\s*(.+?)(?:\n|$)',
-                r'(?:Answer|answer):\s*(.+?)(?:\n|$)',
-                r'(?:Therefore|Thus|So),?\s+(.+?)(?:\n|$)',
-                r'=\s*([^=\n]+)$',  # Last equation result
+                r'(?:Therefore|Thus|So),?\s*(.+?)(?:\n|$)',
+                r'=\s*([^=\n]+)$',  # Last equation
             ]
 
             for pattern in answer_patterns:
-                match = re.search(pattern, text, re.MULTILINE)
+                match = re.search(pattern, text, re.MULTILINE | re.DOTALL)
                 if match:
                     answer = match.group(1).strip()
-                    # Clean up common artifacts
+                    # Clean up artifacts
                     answer = answer.rstrip('.').strip()
+                    # Remove any trailing explanations
+                    answer = answer.split('\n')[0]
                     return answer
 
-            # Fallback: return last non-empty line
+            # Fallback: return last non-empty line that looks like an answer
             lines = [line.strip() for line in text.split('\n') if line.strip()]
+            for line in reversed(lines):
+                # Skip lines that look like reasoning
+                if not any(line.lower().startswith(word) for word in ['so', 'therefore', 'thus', 'let', 'we', 'the']):
+                    return line
+
             if lines:
                 return lines[-1]
 
