@@ -1,0 +1,72 @@
+[
+  {
+    "questionID": "390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324",
+    "question": "Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?",
+    "answer": "Matrices help solve the system of equations by organizing the coefficients and constants into a structured format",
+    "difficulty": "medium",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584",
+    "question": "What kind of function has a graph that is a straight line?",
+    "answer": "Linear function.",
+    "difficulty": "medium",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d",
+    "question": "What's the highest point in South America?",
+    "answer": "Okay, the user is asking for the highest point in South America. Let me start by recalling what I know. I remember that the Andes Mountains are a major mountain range in South America, and they have some of the tallest peaks. The highest peak in the world is Mount Everest, but that's in Asia, so it's not in South America.",
+    "difficulty": "medium",
+    "subject": "geography"
+  },
+  {
+    "questionID": "834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524",
+    "question": "I read about the 'Llanos.' What are they and where are they found?",
+    "answer": "Okay, the user asked about the Llanos. I need to explain what they are and where they're found. First, I should start by defining the Llanos. I remember that \"llano\" is a Spanish word, so maybe it's a region or landscape. I think they're grasslands, but I need to confirm.",
+    "difficulty": "medium",
+    "subject": "geography"
+  },
+  {
+    "questionID": "b32671441800d04e9f2eff87edf2008f9dc344c74c1b31b5e90ad0f2a7d9289d",
+    "question": "Which country is known as the 'Land of the Thunder Dragon'?",
+    "answer": "Okay, the user is asking which country is known as the 'Land of the Thunder Dragon'. I need to figure out the correct answer. First, I should recall if I've heard this term before. The term \"Thunder Dragon\" might be a nickname for a country, possibly related to its geography or culture.",
+    "difficulty": "medium",
+    "subject": "geography"
+  },
+  {
+    "questionID": "154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b",
+    "question": "In what ways did the Industrial Revolution influence political ideologies in Europe?",
+    "answer": "Okay, the user is asking how the Industrial Revolution influenced political ideologies in Europe. Let me start by recalling what I know about the Industrial Revolution. It was the period from the late 18th to early 19th century when there was a major shift from agrarian economies to industrialized ones. Now, how did that affect political ideas?",
+    "difficulty": "medium",
+    "subject": "history"
+  },
+  {
+    "questionID": 4,
+    "question": "What is gods own country",
+    "answer": "Okay, the user is asking, \"What is gods own country?\" I need to figure out what they mean by that. First, I should consider possible interpretations. \"Gods own country\" could be a phrase from a book, a song, a movie, or a reference to a specific concept in religion or mythology.",
+    "difficulty": "mediu m",
+    "subject": "geography"
+  },
+  {
+    "questionID": 4,
+    "question": "What country is called peral of africa",
+    "answer": "Okay, the user is asking, \"What is gods own country?\" I need to figure out what they mean by that. First, I should consider possible interpretations. \"Gods own country\" could be a phrase from a book, a song, a movie, or a reference to a specific concept in religion or mythology.",
+    "difficulty": "mediu m",
+    "subject": "geography"
+  },
+  {
+    "questionID": 7,
+    "question": "Who won world war 2",
+    "answer": "Okay, the user is asking who won World War II. I need to make sure I answer this accurately. First, I should recall the key events and the outcome of the war. World War II was a global conflict that lasted from 1939 to 1945. The main opposing sides were the Allies and the Axis powers.",
+    "difficulty": "medium",
+    "subject": "History"
+  },
+  {
+    "questionID": 8,
+    "question": "what is Profitability Index",
+    "answer": "Okay, the user is asking about the Profitability Index. Let me start by recalling what I know about this concept. The Profitability Index, also known as the Profitability Index (PI), is a tool used in capital budgeting to evaluate the profitability of an investment. It's related to the Net Present Value (NPV) but provides a different perspective by considering the ratio of the present value of future cash flows to the initial investment.",
+    "difficulty": "medium",
+    "subject": "Finance"
+  }
+]
