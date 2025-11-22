@@ -115,7 +115,7 @@ class InferencePipeline:
         self.params_general = SamplingParams(
             temperature=0.2,   # Slightly higher to avoid getting stuck
             top_p=0.92,
-            max_tokens=384,    # More space for complete factual answers
+            max_tokens=448,    # Increased for complete answers (especially History)
             stop=["<|im_end|>", "\n\nQuestion:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
@@ -379,30 +379,39 @@ Answer:"""
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
 
-                # SIMPLE cleanup: Remove first sentence if it's meta-commentary
-                # Split into sentences
-                sentences = re.split(r'(?<=[.!?])\s+', raw_answer)
+                # Remove "Answer:" prefix if present
+                if raw_answer.lower().startswith('answer:'):
+                    raw_answer = raw_answer[7:].strip()
 
-                # If first sentence starts with "Okay" or similar, skip it
-                bad_starts = ['okay', 'well', 'alright', 'let me', 'the user', 'i need']
-                if sentences and len(sentences) > 1:
-                    first_sent_lower = sentences[0].lower()
-                    if any(first_sent_lower.startswith(bad) for bad in bad_starts):
-                        # Remove first sentence
-                        raw_answer = ' '.join(sentences[1:])
-
-                answer = self._strip_thinking(raw_answer.strip())
-
-                # Clean up any remaining meta phrases at start
-                if answer.lower().startswith('from what i'):
-                    # Extract just the factual part
-                    parts = answer.split(',', 1)
-                    if len(parts) > 1:
-                        answer = parts[1].strip()
-
-                # If answer is empty, fallback
-                if not answer or len(answer) < 5:
+                # AGGRESSIVE cleanup for reasoning
+                # If output starts with "Okay" and is long (>200 chars), it's all reasoning
+                if raw_answer.lower().startswith('okay') and len(raw_answer) > 200:
+                    # This is likely full reasoning - extract nothing, mark as failed
                     answer = "Unable to generate answer"
+                else:
+                    # Split into sentences
+                    sentences = re.split(r'(?<=[.!?])\s+', raw_answer)
+
+                    # If first sentence starts with "Okay" or similar, skip it
+                    bad_starts = ['okay', 'well', 'alright', 'let me', 'the user', 'i need', 'i will']
+                    if sentences and len(sentences) > 1:
+                        first_sent_lower = sentences[0].lower()
+                        if any(first_sent_lower.startswith(bad) for bad in bad_starts):
+                            # Remove first sentence
+                            raw_answer = ' '.join(sentences[1:])
+
+                    answer = self._strip_thinking(raw_answer.strip())
+
+                    # Clean up any remaining meta phrases at start
+                    if answer.lower().startswith('from what i'):
+                        # Extract just the factual part
+                        parts = answer.split(',', 1)
+                        if len(parts) > 1:
+                            answer = parts[1].strip()
+
+                    # If answer is empty, fallback
+                    if not answer or len(answer) < 5:
+                        answer = "Unable to generate answer"
 
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
