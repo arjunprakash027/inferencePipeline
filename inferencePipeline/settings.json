@@ -81,7 +81,7 @@
     },
     "gguf_conversion": {
         "quantization": "q4_0",
-        "output_filename": "model_llama_8b_q4_0.gguf",
+        "output_filename": "model_llama_3b_q4_0.gguf",
         "f16_intermediate": true
     },
     "optimization": {
