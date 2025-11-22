@@ -13,10 +13,10 @@ base_cache_dir = "./app/model"
 
 # Define all models to download
 models = [
-    {
-        "repo_id": "google/embeddinggemma-300m",
-        "name": "embeddinggemma-300m"
-    },
+    # {
+    #     "repo_id": "google/embeddinggemma-300m",
+    #     "name": "embeddinggemma-300m"
+    # },
     # {
     #     "repo_id": "google/gemma-3-270m-it",
     #     "name": "gemma-3-270m-it"
@@ -25,14 +25,14 @@ models = [
     #     "repo_id": "google/gemma-3-1b-it",
     #     "name": "gemma-3-1b-it"
     # },
-    {
-        "repo_id": "meta-llama/Llama-3.2-1B-Instruct",
-        "name": "Llama-3.2-1B-Instruct"
-    },
-    {
-        "repo_id": "meta-llama/Llama-3.2-3B-Instruct",
-        "name": "Llama-3.2-3B-Instruct"
-    },
+    # {
+    #     "repo_id": "meta-llama/Llama-3.2-1B-Instruct",
+    #     "name": "Llama-3.2-1B-Instruct"
+    # },
+    # {
+    #     "repo_id": "meta-llama/Llama-3.2-3B-Instruct",
+    #     "name": "Llama-3.2-3B-Instruct"
+    # },
     # {
     #     "repo_id": "Qwen/Qwen3-Embedding-0.6B",
     #     "name": "Qwen3-Embedding-0.6B"
@@ -45,10 +45,10 @@ models = [
         "repo_id": "meta-llama/Llama-3.1-8B-Instruct",
         "name": "Llama-3.1-8B-Instruct"
     },
-    {
-        "repo_id": "Qwen/Qwen3-1.7B",
-        "name": "Qwen3-1.7B"
-    }
+    # {
+    #     "repo_id": "Qwen/Qwen3-1.7B",
+    #     "name": "Qwen3-1.7B"
+    # }
 ]
 
 # Download each model
