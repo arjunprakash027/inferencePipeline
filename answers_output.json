@@ -2,7 +2,7 @@
   {
     "questionID": "390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324",
     "question": "Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?",
-    "answer": "Matrices can be a powerful tool for solving systems of linear equations like the one you provided. Here's why:\n\nThe system of equations you provided is:\n\nx + y = 5\nx - y = 1\n\nTo solve this system, we can use the method of substitution or elimination. However, matrices can help us solve it more easily.\n\nWe can represent the system of equations as an augmented matrix:\n\n| 1 1 | 5 |\n| 1 -1 | 1 |\n\nThe idea is to transform the matrix into row-echelon form, which makes it easy to solve for the variables.\n\nTo do this, we can add the two equations together to eliminate the y-variable:\n\n| 1 1 | 5 |\n|",
+    "answer": "A great question about matrices!\n\nMatrices can help solve systems of linear equations like { x + y = 5 ; x - y = 1 } by representing the coefficients of the variables (x and y) in a compact and organized way. Here's how:\n\nWe can write the system of equations as an augmented matrix:\n\n| 1  1 | 5 |\n| 1 -1 | 1 |\n\nThe first row represents the coefficients of x and y in the first equation (x + y = 5), and the second row represents the coefficients of x and y in the second equation (x - y = 1). The right-hand column represents the constants on the right-hand side of each equation.\n\nTo solve the system, we",
     "difficulty": "medium",
     "subject": "algebra"
   },
@@ -16,14 +16,14 @@
   {
     "questionID": "be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d",
     "question": "What's the highest point in South America?",
-    "answer": "Aconcagua, located in the Andes mountain range in Argentina, is the highest point in South America, with an elevation of 22,841 feet (6,962 meters) above sea level.",
+    "answer": "Aconcagua, a mountain in Argentina, is the highest point in South America, with an elevation of 6,962 meters (22,841 feet) above sea level.",
     "difficulty": "medium",
     "subject": "geography"
   },
   {
     "questionID": "834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524",
     "question": "I read about the 'Llanos.' What are they and where are they found?",
-    "answer": "The Llanos are a vast grassland region in South America, specifically in the countries of Colombia, Venezuela, and parts of Brazil, Bolivia, and Peru.",
+    "answer": "The Llanos are a savanna-like grassland region in South America, specifically in Colombia and Venezuela.",
     "difficulty": "medium",
     "subject": "geography"
   },
@@ -37,7 +37,7 @@
   {
     "questionID": "154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b",
     "question": "In what ways did the Industrial Revolution influence political ideologies in Europe?",
-    "answer": "The Industrial Revolution had a profound impact on the development of political ideologies in Europe, leading to significant changes in the way people thought about the role of government, the economy, and social class. Here are some key ways in which the Industrial Revolution influenced political ideologies in Europe:\n\n1. **Emergence of Liberalism**: The Industrial Revolution created a new class of industrialists and entrepreneurs who sought to challenge the traditional aristocratic and monarchical systems of power. Liberalism, which emphasized individual rights, free markets, and limited government intervention, emerged as a response to the perceived injustices of the old order.\n2. **Rise of Socialism**: The Industrial Revolution also led to the growth of urban poverty and the exploitation of workers, which fueled the development",
+    "answer": "The Industrial Revolution had a profound impact on the development of political ideologies in Europe, particularly in the 19th and early 20th centuries. Here are some key ways in which it influenced the evolution of political thought:\n\n1. **Rise of Liberalism**: The Industrial Revolution created a new class of industrialists and entrepreneurs who accumulated wealth and power. This led to the emergence of liberal ideologies that emphasized individual rights, free markets, and limited government intervention. Thinkers like Adam Smith and John Stuart Mill advocated for laissez-faire economics and the protection of property rights.\n2. **Socialism and the Labor Movement**: As workers became increasingly exploited and disillusioned with the harsh conditions of industrialization, socialist and labor movements emerged to challenge the power",
     "difficulty": "medium",
     "subject": "history"
   },
@@ -58,14 +58,14 @@
   {
     "questionID": 7,
     "question": "Who won world war 2",
-    "answer": "The Allies, which consisted of the United States, the United Kingdom, France, and the Soviet Union, ultimately emerged victorious in World War II.",
+    "answer": "The Allies, which consisted of the United States, the United Kingdom, France, and the Soviet Union, among others, ultimately won World War II.",
     "difficulty": "medium",
     "subject": "History"
   },
   {
     "questionID": 8,
     "question": "what is Profitability Index",
-    "answer": "The Profitability Index (PI) is a financial metric that measures the return on investment (ROI) of a project or investment by comparing the present value of the expected future cash flows to the initial investment. It is calculated by dividing the present value of the expected future cash flows by the initial investment.\n\nThe formula for the Profitability Index is:\n\nProfitability Index (PI) = Present Value of Future Cash Flows / Initial Investment\n\nThe Profitability Index is a useful tool for evaluating the viability of a project or investment by providing a single number that indicates the expected return on investment. A higher Profit",
+    "answer": "The Profitability Index (PI) is a financial metric that measures the difference between the present value of future cash inflows and the present value of future cash outflows for a project or investment. It is a key decision-making tool used to evaluate the potential profitability of a project or investment opportunity.\n\nThe formula for Profitability Index is:\n\nPI = (Present Value of Future Cash Inflows - Present Value of Future Cash Outflows) / Initial Investment\n\nA higher PI value indicates a more profitable project or investment, while a lower PI value suggests a less profitable one.",
     "difficulty": "medium",
     "subject": "Finance"
   }
