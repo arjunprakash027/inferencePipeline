@@ -3,13 +3,15 @@ Tech Arena 2025 - Phase 2
 Efficient LLM Inference Pipeline with vLLM
 
 OPTIMIZATIONS:
-✅ vLLM for fast inference
+✅ vLLM for fast inference with Qwen 4B
 ✅ FP16 precision for T4 GPU
-✅ Batched processing
-✅ Reasoning enabled for Chinese and Algebra
+✅ Batched processing by subject
+✅ Few-shot prompting for Chinese and Algebra
+✅ Answer extraction (returns only final answers, not reasoning)
 """
 
 import os
+import re
 from typing import List, Dict
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
@@ -100,12 +102,47 @@ class InferencePipeline:
 
         print("✅ Pipeline ready for inference\n")
 
-    def _create_chat_prompt(self, question: str, enable_reasoning: bool = False) -> str:
-        """Create prompt using Qwen chat template with optional reasoning"""
-        if enable_reasoning:
-            # Add reasoning instruction for Chinese and Algebra
-            prompt = f"Think step-by-step and provide a detailed answer.\n\n{question}"
+    def _create_chat_prompt(self, question: str, subject: str = "general", enable_reasoning: bool = False) -> str:
+        """Create prompt using Qwen chat template with few-shot examples"""
+
+        if subject == "chinese":
+            # Few-shot prompting for Chinese questions
+            prompt = """You are an expert in Chinese language and literature. Answer the question directly and concisely.
+
+Example 1:
+Question: 下列词语中，加点字的读音完全正确的一项是？
+Answer: 分析每个选项的读音后，选项B的读音完全正确。
+
+Example 2:
+Question: "春蚕到死丝方尽"中的"丝"字是什么意思？
+Answer: "丝"谐音"思"，表示思念之情，意思是思念到死才会停止。
+
+Now answer this question directly. Think through it carefully but only provide the final answer:
+Question: {question}
+Answer:"""
+
+        elif subject == "algebra":
+            # Few-shot prompting for Algebra questions
+            prompt = """You are a mathematics expert. Solve the problem step-by-step in your thinking, but only provide the final answer.
+
+Example 1:
+Question: Solve for x: 2x + 5 = 13
+Answer: x = 4
+
+Example 2:
+Question: If f(x) = 3x² - 2x + 1, what is f(2)?
+Answer: f(2) = 9
+
+Example 3:
+Question: Simplify: (x + 3)(x - 3)
+Answer: x² - 9
+
+Now solve this problem. Show your reasoning, then provide the final answer clearly:
+Question: {question}
+Answer:"""
+
         else:
+            # Standard prompt for other subjects
             prompt = question
 
         messages = [{"role": "user", "content": prompt}]
@@ -114,6 +151,36 @@ class InferencePipeline:
             tokenize=False,
             add_generation_prompt=True
         )
+
+    def _extract_final_answer(self, text: str, subject: str) -> str:
+        """Extract only the final answer from reasoning output"""
+
+        # For Chinese and Algebra, try to extract the final answer
+        if subject in ['chinese', 'algebra']:
+            # Look for patterns like "Answer: ..." or "答案：..." or "Final answer: ..."
+            answer_patterns = [
+                r'(?:Final [Aa]nswer|ANSWER|Answer):\s*(.+?)(?:\n\n|\n(?=[A-Z])|$)',
+                r'(?:答案|最终答案)[:：]\s*(.+?)(?:\n\n|\n|$)',
+                r'(?:Therefore|Thus|So),?\s+(.+?)(?:\n\n|\n|$)',
+                r'(?:结论|因此)[:：,，]\s*(.+?)(?:\n\n|\n|$)',
+            ]
+
+            for pattern in answer_patterns:
+                match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+                if match:
+                    answer = match.group(1).strip()
+                    # Clean up the answer
+                    answer = re.sub(r'\n+', ' ', answer)
+                    return answer
+
+            # If no pattern found, try to get the last substantive line
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            if lines:
+                # Return the last line as the answer
+                return lines[-1]
+
+        # For other subjects or if extraction fails, return the full text
+        return text
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """
@@ -134,6 +201,7 @@ class InferencePipeline:
 
         reasoning_indices = []
         reasoning_prompts = []
+        reasoning_subjects = []
 
         no_reasoning_indices = []
         no_reasoning_prompts = []
@@ -146,10 +214,11 @@ class InferencePipeline:
 
             if needs_reasoning:
                 reasoning_indices.append(i)
-                reasoning_prompts.append(self._create_chat_prompt(q['question'], enable_reasoning=True))
+                reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject, enable_reasoning=True))
+                reasoning_subjects.append(subject)
             else:
                 no_reasoning_indices.append(i)
-                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], enable_reasoning=False))
+                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject, enable_reasoning=False))
 
         # =====================================================================
         # PHASE 2: BATCH EXECUTION
@@ -161,8 +230,11 @@ class InferencePipeline:
 
             reasoning_outputs = self.llm.generate(reasoning_prompts, self.params_reasoning, use_tqdm=False)
 
-            for idx, output in zip(reasoning_indices, reasoning_outputs):
-                answer = output.outputs[0].text.strip()
+            for idx, output, subject in zip(reasoning_indices, reasoning_outputs, reasoning_subjects):
+                raw_answer = output.outputs[0].text.strip()
+
+                # Extract final answer (remove reasoning steps)
+                answer = self._extract_final_answer(raw_answer, subject)
 
                 # Enforce 5000 char limit
                 if len(answer) > 5000:
