@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 # Configuration
-MODEL_NAME = "Qwen/Qwen3-4B-Instruct"
+MODEL_NAME = "Qwen/Qwen3-4B"
 CACHE_DIR = "/app/models"
 
 
@@ -90,6 +90,7 @@ class InferencePipeline:
             top_p=0.9,
             max_tokens=1024,
             stop=["<|im_end|>", "\n\nQuestion:"],
+            skip_special_tokens=False,  # Keep tokens for now, filter in post-processing
         )
 
         # Sampling parameters without reasoning
@@ -98,9 +99,20 @@ class InferencePipeline:
             top_p=0.9,
             max_tokens=512,
             stop=["<|im_end|>", "\n\nQuestion:"],
+            skip_special_tokens=False,  # Keep tokens for now, filter in post-processing
         )
 
         print("✅ Pipeline ready for inference\n")
+
+    def _strip_thinking(self, text: str) -> str:
+        """Remove <think> tags and their content from the output"""
+        import re
+        # Remove <think>...</think> blocks
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        # Remove standalone <think> or </think> tags
+        text = re.sub(r'</?think>', '', text)
+        return text.strip()
+
 
     def _create_chat_prompt(self, question: str, subject: str = "general") -> str:
         """Create prompt using Qwen chat template with few-shot examples"""
@@ -230,6 +242,9 @@ Answer:"""
 
             for idx, output, subject in zip(reasoning_indices, reasoning_outputs, reasoning_subjects):
                 raw_answer = output.outputs[0].text.strip()
+                
+                # Remove thinking tags first
+                raw_answer = self._strip_thinking(raw_answer)
 
                 # Extract final answer (remove reasoning steps)
                 answer = self._extract_final_answer(raw_answer, subject)
@@ -250,7 +265,10 @@ Answer:"""
             no_reasoning_outputs = self.llm.generate(no_reasoning_prompts, self.params_no_reasoning, use_tqdm=False)
 
             for idx, output in zip(no_reasoning_indices, no_reasoning_outputs):
-                answer = output.outputs[0].text.strip()
+                raw_answer = output.outputs[0].text.strip()
+                
+                # Remove thinking tags
+                answer = self._strip_thinking(raw_answer)
 
                 # Enforce 5000 char limit
                 if len(answer) > 5000:
