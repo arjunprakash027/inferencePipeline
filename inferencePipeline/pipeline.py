@@ -434,7 +434,7 @@ Answer:"""
                         # Take the last sentence that's not reasoning
                         sentences = [s.strip() for s in raw_answer.split('.') if s.strip()]
                         for sentence in reversed(sentences):
-                            if not any(sentence.lower().startswith(phrase) for phrase in reasoning_starts):
+                            if not any(sentence.lower().startswith(phrase) for phrase in reasoning_keywords):
                                 answer = sentence + '.'
                                 break
 
