@@ -1,47 +1,62 @@
-# vllm_chat.py — FULL QUANTIZATION + vLLM LOAD IN ONE FILE (WORKS ON T4 16GB)
+# vllm_chat.py — FIXED: GPTQ 4-bit Quantization + vLLM Load for Llama-3.1-8B-Instruct on T4
 
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-QUANTIZED_PATH = "/app/models/Llama-3.1-8B-Instruct-AWQ"
+QUANTIZED_PATH = "/app/models/Llama-3.1-8B-Instruct-GPTQ"
 
-def install_awq():
-    """Install AutoAWQ if not available"""
+def install_gptq():
+    """Install optimum[gptq] if not available (compatible with vLLM 0.6.3 + Torch 2.4.1)"""
     try:
-        from awq import AutoAWQForCausalLM
+        from optimum.gptq import GPTQQuantizer
         return True
     except ImportError:
-        print("AutoAWQ not found — installing (~30 seconds)...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "autoawq==0.2.6", "--no-cache-dir"])
+        print("GPTQ not found — installing (~45 seconds)...")
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "optimum[gptq]==1.21.0",
+            "--no-cache-dir", "--force-reinstall", "--no-deps"
+        ])
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "auto-gptq==0.8.0",
+            "--no-cache-dir", "--force-reinstall"
+        ])
         return True
 
 if not Path(QUANTIZED_PATH).exists():
-    print("Quantized model not found → Starting 4-bit AWQ quantization (~5-6 minutes)...")
+    print("Quantized model not found → Starting 4-bit GPTQ quantization (~4-5 minutes)...")
     
-    install_awq()  # Install if needed
+    install_gptq()  # Install if needed
     
-    from awq import AutoAWQForCausalLM
-    from transformers import AutoTokenizer
+    from optimum.gptq import GPTQQuantizer
+    from transformers import AutoTokenizer, AutoModelForCausalLM
+    import torch
 
-    model = AutoAWQForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         "meta-llama/Llama-3.1-8B-Instruct",
         device_map="auto",
         trust_remote_code=True,
-        safetensors=True,
+        torch_dtype=torch.float16,
+        low_cpu_mem_usage=True
     )
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct", trust_remote_code=True)
 
-    model.quantize(
-        tokenizer,
-        quant_config={"zero_point": True, "q_group_size": 128, "w_bit": 4, "version": "GEMM"}
+    quantizer = GPTQQuantizer(
+        bits=4,
+        dataset=["The capital of France is Paris."] * 128,  # Calibration dataset
+        block_size=128,
+        desc_act=False,
+        group_size=128,
+        disable_exllama=False,  # Use ExLlamaV2 for better accuracy
+        tokenizer=tokenizer,
     )
 
     os.makedirs(QUANTIZED_PATH, exist_ok=True)
-    model.save_quantized(QUANTIZED_PATH)
+    quantizer.quantize_model(model, tokenizer, save_directory=QUANTIZED_PATH)
     tokenizer.save_pretrained(QUANTIZED_PATH)
-    print(f"Quantization COMPLETE! Model saved to {QUANTIZED_PATH}")
+    
+    print(f"GPTQ Quantization COMPLETE! Model saved to {QUANTIZED_PATH}")
 else:
     print("Quantized model already exists → Skipping quantization")
 
@@ -51,7 +66,7 @@ from vllm import LLM, SamplingParams
 
 llm = LLM(
     model=QUANTIZED_PATH,
-    quantization="awq",  # Key for quantized loading
+    quantization="gptq",  # Key for GPTQ loading
     dtype="half",
     gpu_memory_utilization=0.95,  # Safe for 4-bit (~5 GB)
     max_model_len=8192,
@@ -82,4 +97,4 @@ while True:
 
     outputs = llm.generate([prompt], sampling_params)
     answer = outputs[0].outputs[0].text.strip()
-    print(f"\nLlama-3.1-8B (4-bit): {answer}\n")
+    print(f"\nLlama-3.1-8B (4-bit GPTQ): {answer}\n")
