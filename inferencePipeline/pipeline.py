@@ -72,17 +72,17 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # Balanced configuration for T4 16GB GPU (speed + stability)
-        print("🚀 Loading Qwen 4B model with vLLM (T4 speed-optimized)...")
+        # Conservative configuration for T4 16GB GPU (stability first)
+        print("🚀 Loading Qwen 4B model with vLLM (T4 memory-optimized)...")
 
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.80,      # Balanced for speed
+            gpu_memory_utilization=0.75,      # Conservative for stability
             max_model_len=640,                # Optimized for typical question length
             enforce_eager=False,              # Enable CUDA graphs for speed
-            max_num_seqs=24,                  # Increased batch for better throughput
-            max_num_batched_tokens=3072,      # Balanced for speed
+            max_num_seqs=20,                  # Reduced for memory
+            max_num_batched_tokens=2560,      # Reduced for memory
             enable_prefix_caching=True,       # Cache few-shot examples
             trust_remote_code=True,
             tensor_parallel_size=1,
@@ -91,29 +91,29 @@ class InferencePipeline:
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters for Chinese (speed optimized)
+        # Sampling parameters for Chinese (balanced)
         self.params_chinese = SamplingParams(
             temperature=0.2,
             top_p=0.85,
-            max_tokens=384,
+            max_tokens=320,  # Reduced from 384
             stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n\n", "答案:"],
             skip_special_tokens=True,
         )
 
-        # Sampling parameters for Algebra (accuracy optimized, more tokens)
+        # Sampling parameters for Algebra (accuracy focused)
         self.params_algebra = SamplingParams(
             temperature=0.05,  # Very very low - math must be deterministic
             top_p=0.95,        # Keep high for complex reasoning
-            max_tokens=896,    # Much more space for complex problems
+            max_tokens=640,    # Reduced from 896 for memory
             stop=["<|im_end|>", "\n\nProblem:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
 
-        # Sampling parameters for other subjects (very fast)
+        # Sampling parameters for History/Geography (answer-only)
         self.params_general = SamplingParams(
-            temperature=0.2,
-            top_p=0.85,
-            max_tokens=192,
+            temperature=0.15,  # Lower for more focused answers
+            top_p=0.9,         # Slightly higher for better quality
+            max_tokens=256,    # Increased from 192 for complete answers
             stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],
             skip_special_tokens=True,
         )
@@ -170,8 +170,11 @@ Problem: {question}
 Answer:"""
 
         else:
-            # Standard prompt for other subjects
-            prompt = question
+            # History/Geography - direct answer format
+            prompt = f"""Answer this question directly and concisely. Provide ONLY the answer, NO explanation.
+
+Question: {question}
+Answer:"""
 
         messages = [{"role": "user", "content": prompt}]
         return self.tokenizer.apply_chat_template(
