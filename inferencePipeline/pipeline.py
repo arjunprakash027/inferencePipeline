@@ -72,41 +72,41 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # Memory-optimized configuration for T4 16GB GPU
-        print("🚀 Loading Qwen 4B model with vLLM (T4 optimized)...")
+        # Balanced configuration for T4 16GB GPU (speed + stability)
+        print("🚀 Loading Qwen 4B model with vLLM (T4 speed-optimized)...")
 
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.75,      # Very conservative for T4 stability
-            max_model_len=768,                # Further reduced context for memory savings
+            gpu_memory_utilization=0.80,      # Balanced for speed
+            max_model_len=640,                # Optimized for typical question length
             enforce_eager=False,              # Enable CUDA graphs for speed
-            max_num_seqs=16,                  # Further reduced batch size for memory
-            max_num_batched_tokens=2048,      # Lower for memory constraints
+            max_num_seqs=24,                  # Increased batch for better throughput
+            max_num_batched_tokens=3072,      # Balanced for speed
             enable_prefix_caching=True,       # Cache few-shot examples
             trust_remote_code=True,
             tensor_parallel_size=1,
-            swap_space=4,                     # Increased CPU swap space for overflow
+            swap_space=4,                     # CPU swap space for overflow
         )
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters with reasoning enabled (memory optimized)
+        # Sampling parameters with reasoning enabled (speed optimized)
         self.params_reasoning = SamplingParams(
-            temperature=0.25,  # Slightly lower for efficiency, still allows creativity
-            top_p=0.9,
-            max_tokens=512,  # Reduced for memory constraints
-            stop=["<|im_end|>", "\n\nQuestion:", "\n\n\n"],  # Added triple newline to catch end of thought
-            skip_special_tokens=True,  # Filter special tokens during generation
+            temperature=0.2,  # Lower for faster, more deterministic output
+            top_p=0.85,       # Reduced sampling space for speed
+            max_tokens=384,   # Reduced further - most answers fit in this
+            stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n\n", "答案:", "Answer:"],
+            skip_special_tokens=True,
         )
 
-        # Sampling parameters without reasoning
+        # Sampling parameters without reasoning (very fast)
         self.params_no_reasoning = SamplingParams(
-            temperature=0.25,  # Slightly lower for efficiency
-            top_p=0.9,
-            max_tokens=256,  # Reduced for memory constraints
-            stop=["<|im_end|>", "\n\nQuestion:", "\n\n"],  # Added double newline stop
-            skip_special_tokens=True,  # Filter special tokens during generation
+            temperature=0.2,  # Lower for speed
+            top_p=0.85,       # Reduced for speed
+            max_tokens=192,   # Short and fast
+            stop=["<|im_end|>", "\n\n问题", "\n\nQuestion:", "\n\n"],
+            skip_special_tokens=True,
         )
 
         print("✅ Pipeline ready for inference\n")
@@ -125,25 +125,18 @@ class InferencePipeline:
         """Create prompt using Qwen chat template with few-shot examples"""
 
         if subject == "chinese":
-            # Few-shot prompting for Chinese questions
-            prompt = f"""Answer the Chinese question clearly and directly.
+            # Streamlined Chinese prompt - faster, more direct
+            prompt = f"""直接回答以下中文问题。
 
-Example:
-Question: 下列词语中，加点字的读音完全正确的一项是？
-Answer: 选项B的读音完全正确。
-
-Question: {question}
-Answer:"""
+问题: {question}
+答案:"""
 
         elif subject == "algebra":
-            # Few-shot prompting for Algebra questions
-            prompt = f"""Solve the math problem step by step, then provide the final answer.
+            # Streamlined Algebra prompt - concise
+            prompt = f"""Solve this problem and give the final answer.
 
-Example:
-Question: Solve for x: 2x + 5 = 13
-Answer: x = 4
+{question}
 
-Question: {question}
 Answer:"""
 
         else:
