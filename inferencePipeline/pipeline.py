@@ -193,29 +193,20 @@ Problem: {question}
 Answer:"""
 
         else:
-            # History/Geography/Finance - ULTRA strict answer-only format
-            prompt = f"""IMPORTANT: Answer with ONLY the factual answer. Do NOT include ANY of these:
-- "Okay"
-- "The user is asking"
-- "Let me think"
-- "I need to"
-- Any meta-commentary
+            # History/Geography/Finance - Direct answer format
+            prompt = f"""Answer this question directly with just the factual answer.
 
-Just give the direct answer.
-
-Example 1:
 Question: Who discovered America?
-Answer: Christopher Columbus in 1492
+Answer: Christopher Columbus in 1492.
 
-Example 2:
 Question: What is the highest point in South America?
-Answer: Mount Aconcagua in Argentina (6,961 meters)
+Answer: Mount Aconcagua in Argentina (6,961 meters).
 
-Example 3:
+Question: Which country is known as the 'Land of the Thunder Dragon'?
+Answer: Bhutan.
+
 Question: Who won World War 2?
-Answer: The Allied Powers (United States, Soviet Union, United Kingdom, and France)
-
-Now answer ONLY with the factual answer:
+Answer: The Allied Powers (United States, Soviet Union, United Kingdom, and France).
 
 Question: {question}
 Answer:"""
@@ -388,58 +379,30 @@ Answer:"""
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
 
-                # ULTRA-AGGRESSIVE CLEANUP: Extract factual answer only
-                reasoning_keywords = [
-                    'okay', 'so', 'well', 'alright', 'let me', 'the user',
-                    'i need', 'i will', "let's", 'first', 'to answer',
-                    'the question', 'they want', 'i should', 'looking at',
-                    'in the context', 'however', 'alternatively', 'wait',
-                    'for instance', 'for example', 'in some', 'but',
-                    'this area', 'this is', 'the most', 'the exact',
-                    'based on', 'according to', 'traditionally', 'might be',
-                    'could be', 'would be', 'should be', "i'm not sure",
-                    'or similar', 'without the', 'just a', 'rather than'
-                ]
+                # SIMPLE cleanup: Remove first sentence if it's meta-commentary
+                # Split into sentences
+                sentences = re.split(r'(?<=[.!?])\s+', raw_answer)
 
-                # Strategy: Find first sentence that doesn't contain reasoning
-                sentences = re.split(r'[.!?]+', raw_answer)
-                answer = ''
+                # If first sentence starts with "Okay" or similar, skip it
+                bad_starts = ['okay', 'well', 'alright', 'let me', 'the user', 'i need']
+                if sentences and len(sentences) > 1:
+                    first_sent_lower = sentences[0].lower()
+                    if any(first_sent_lower.startswith(bad) for bad in bad_starts):
+                        # Remove first sentence
+                        raw_answer = ' '.join(sentences[1:])
 
-                for sentence in sentences:
-                    sentence = sentence.strip()
-                    if not sentence or len(sentence) < 10:
-                        continue
+                answer = self._strip_thinking(raw_answer.strip())
 
-                    sentence_lower = sentence.lower()
+                # Clean up any remaining meta phrases at start
+                if answer.lower().startswith('from what i'):
+                    # Extract just the factual part
+                    parts = answer.split(',', 1)
+                    if len(parts) > 1:
+                        answer = parts[1].strip()
 
-                    # Skip if starts with reasoning phrase
-                    if any(sentence_lower.startswith(phrase) for phrase in reasoning_keywords):
-                        continue
-
-                    # Skip if contains too many reasoning keywords (likely meta-commentary)
-                    keyword_count = sum(1 for keyword in reasoning_keywords if keyword in sentence_lower)
-                    if keyword_count > 2:
-                        continue
-
-                    # This is a good sentence - use it!
-                    answer = sentence.strip() + '.'
-                    break
-
-                answer = self._strip_thinking(answer)
-
-                # If answer is still empty or too short, it's a failure
+                # If answer is empty, fallback
                 if not answer or len(answer) < 5:
-                    # Try to extract from raw answer as last resort
-                    if raw_answer and len(raw_answer) > 10:
-                        # Take the last sentence that's not reasoning
-                        sentences = [s.strip() for s in raw_answer.split('.') if s.strip()]
-                        for sentence in reversed(sentences):
-                            if not any(sentence.lower().startswith(phrase) for phrase in reasoning_keywords):
-                                answer = sentence + '.'
-                                break
-
-                    if not answer or len(answer) < 5:
-                        answer = "Unable to generate answer"
+                    answer = "Unable to generate answer"
 
                 if len(answer) > 5000:
                     answer = answer[:5000].rsplit('. ', 1)[0] + '.'
