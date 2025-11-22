@@ -10,6 +10,7 @@ from inferencePipeline import loadPipeline
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'  # Reduce memory fragmentation
 
 def log_experiment(name: str, method: str, num_questions: int, total_time: float):
     """Append experiment results to experiments.csv"""

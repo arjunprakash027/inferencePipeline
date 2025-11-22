@@ -78,15 +78,15 @@ class InferencePipeline:
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.85,      # Conservative for T4 stability
-            max_model_len=1024,               # Reduced context for memory savings
+            gpu_memory_utilization=0.75,      # Very conservative for T4 stability
+            max_model_len=768,                # Further reduced context for memory savings
             enforce_eager=False,              # Enable CUDA graphs for speed
-            max_num_seqs=32,                  # Reduced batch size for memory
-            max_num_batched_tokens=4096,      # Lower for memory constraints
+            max_num_seqs=16,                  # Further reduced batch size for memory
+            max_num_batched_tokens=2048,      # Lower for memory constraints
             enable_prefix_caching=True,       # Cache few-shot examples
             trust_remote_code=True,
             tensor_parallel_size=1,
-            swap_space=2,                     # CPU swap space for overflow
+            swap_space=4,                     # Increased CPU swap space for overflow
         )
 
         self.tokenizer = self.llm.get_tokenizer()
