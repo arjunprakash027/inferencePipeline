@@ -72,18 +72,18 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # Optimized configuration for T4 16GB GPU (speed + stability)
+        # Optimized configuration for T4 16GB GPU (Log 3 working config)
         print("🚀 Loading Qwen 4B model with vLLM (T4 optimized)...")
 
         self.llm = LLM(
             model=RAW_MODEL_PATH,             # Load directly from HF cache
             dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.78,      # Higher utilization (have 3.18GB free)
-            max_model_len=640,                # Optimized for typical question length
+            gpu_memory_utilization=0.90,      # Higher utilization for reasoning tasks
+            max_model_len=2048,               # Longer context for reasoning support
             enforce_eager=False,              # Enable CUDA graphs for speed
             max_num_seqs=28,                  # Increased (can handle 36x)
             max_num_batched_tokens=3584,      # Increased throughput
-            enable_prefix_caching=True,       # Cache few-shot examples
+            enable_prefix_caching=False,      # Disabled (Log 3 working config)
             trust_remote_code=True,
             tensor_parallel_size=1,
             swap_space=4,                     # CPU swap space for overflow

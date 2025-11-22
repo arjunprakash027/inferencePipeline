@@ -15,3 +15,11 @@ timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
 2025-11-22 19:28:59,default_run,vllm,10,44.8,4479.8,0.22
 2025-11-22 20:29:11,default_run,vllm,10,478.36,47836.0,0.02
 2025-11-22 20:31:21,default_run,vllm,10,23.79,2379.0,0.42
+2025-11-22 21:15:52,oom_fixed_test,vllm,10,22.52,2252.0,0.44
+2025-11-22 21:27:25,self_consistency_test,vllm,10,18.96,1896.2,0.53
+2025-11-22 21:35:39,default_run,vllm,10,33.99,3398.9,0.29
+2025-11-22 21:38:58,default_run,vllm,10,33.92,3391.9,0.29
+2025-11-22 21:42:57,default_run,vllm,10,33.86,3386.4,0.3
+2025-11-22 21:46:57,default_run,vllm,10,34.22,3422.4,0.29
+2025-11-22 21:50:52,default_run,vllm,10,36.75,3674.6,0.27
+2025-11-22 23:28:25,default_run,vllm,10,36.72,3672.2,0.27
