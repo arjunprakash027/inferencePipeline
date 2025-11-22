@@ -20,7 +20,7 @@ from pathlib import Path
 
 # Configuration
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-CACHE_DIR = "./app/model"  
+CACHE_DIR = "./app/models"  # Fixed: was "./app/model"
 QUANT_PATH = "/tmp/llama-3b-awq"  # Ephemeral storage for quantized model
 
 
