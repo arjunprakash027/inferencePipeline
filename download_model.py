@@ -29,10 +29,10 @@ models = [
     #     "repo_id": "meta-llama/Llama-3.2-1B-Instruct",
     #     "name": "Llama-3.2-1B-Instruct"
     # },
-    # {
-    #     "repo_id": "meta-llama/Llama-3.2-3B-Instruct",
-    #     "name": "Llama-3.2-3B-Instruct"
-    # },
+    {
+        "repo_id": "meta-llama/Llama-3.2-3B-Instruct",
+        "name": "Llama-3.2-3B-Instruct"
+    },
     # {
     #     "repo_id": "Qwen/Qwen3-Embedding-0.6B",
     #     "name": "Qwen3-Embedding-0.6B"
