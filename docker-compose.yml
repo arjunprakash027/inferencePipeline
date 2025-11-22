@@ -1,7 +1,0 @@
-services:
-  app:
-    build: .
-    container_name: interactivePipeline
-    volumes:
-      - .:/app  # Mount local code for easy editing
-    tty: true   # Keep interactive session
