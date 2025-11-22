@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "meta-llama/Llama-3.1-8B-Instruct",
-        "cache_dir": "./app/model",
+        "cache_dir": "./app/models",
         "gguf_cache_dir": "./gguf_cache"
     },
     "server": {
