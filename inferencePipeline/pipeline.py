@@ -388,39 +388,42 @@ Answer:"""
             for idx, output in zip(general_indices, general_outputs):
                 raw_answer = output.outputs[0].text.strip()
 
-                # ULTRA-AGGRESSIVE CLEANUP: Remove all reasoning/meta-commentary
-                # Works on both lines AND sentences
-                reasoning_starts = [
+                # ULTRA-AGGRESSIVE CLEANUP: Extract factual answer only
+                reasoning_keywords = [
                     'okay', 'so', 'well', 'alright', 'let me', 'the user',
                     'i need', 'i will', "let's", 'first', 'to answer',
                     'the question', 'they want', 'i should', 'looking at',
                     'in the context', 'however', 'alternatively', 'wait',
                     'for instance', 'for example', 'in some', 'but',
-                    'this area', 'this is', 'the most', 'the exact'
+                    'this area', 'this is', 'the most', 'the exact',
+                    'based on', 'according to', 'traditionally', 'might be',
+                    'could be', 'would be', 'should be', "i'm not sure",
+                    'or similar', 'without the', 'just a', 'rather than'
                 ]
 
-                # First, split by lines
-                lines = raw_answer.split('\n')
-                cleaned_lines = []
-                for line in lines:
-                    line_lower = line.strip().lower()
-                    if line_lower and not any(line_lower.startswith(phrase) for phrase in reasoning_starts):
-                        cleaned_lines.append(line.strip())
+                # Strategy: Find first sentence that doesn't contain reasoning
+                sentences = re.split(r'[.!?]+', raw_answer)
+                answer = ''
 
-                # Then split by sentences and filter again
-                text = ' '.join(cleaned_lines)
-                sentences = [s.strip() for s in text.split('.') if s.strip()]
-                cleaned_sentences = []
                 for sentence in sentences:
-                    sentence_lower = sentence.strip().lower()
-                    if sentence_lower and not any(sentence_lower.startswith(phrase) for phrase in reasoning_starts):
-                        cleaned_sentences.append(sentence.strip())
+                    sentence = sentence.strip()
+                    if not sentence or len(sentence) < 10:
+                        continue
 
-                # Take only the first clean sentence (the actual answer)
-                if cleaned_sentences:
-                    answer = cleaned_sentences[0] + '.'
-                else:
-                    answer = ''
+                    sentence_lower = sentence.lower()
+
+                    # Skip if starts with reasoning phrase
+                    if any(sentence_lower.startswith(phrase) for phrase in reasoning_keywords):
+                        continue
+
+                    # Skip if contains too many reasoning keywords (likely meta-commentary)
+                    keyword_count = sum(1 for keyword in reasoning_keywords if keyword in sentence_lower)
+                    if keyword_count > 2:
+                        continue
+
+                    # This is a good sentence - use it!
+                    answer = sentence.strip() + '.'
+                    break
 
                 answer = self._strip_thinking(answer)
 
