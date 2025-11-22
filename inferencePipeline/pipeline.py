@@ -102,28 +102,27 @@ class InferencePipeline:
 
         print("✅ Pipeline ready for inference\n")
 
-    def _create_chat_prompt(self, question: str, subject: str = "general", enable_reasoning: bool = False) -> str:
+    def _create_chat_prompt(self, question: str, subject: str = "general") -> str:
         """Create prompt using Qwen chat template with few-shot examples"""
 
         if subject == "chinese":
             # Few-shot prompting for Chinese questions
-            prompt = """You are an expert in Chinese language and literature. Answer the question directly and concisely.
+            prompt = f"""Answer the following Chinese question directly and concisely.
 
 Example 1:
 Question: 下列词语中，加点字的读音完全正确的一项是？
-Answer: 分析每个选项的读音后，选项B的读音完全正确。
+Answer: 选项B的读音完全正确。
 
 Example 2:
 Question: "春蚕到死丝方尽"中的"丝"字是什么意思？
-Answer: "丝"谐音"思"，表示思念之情，意思是思念到死才会停止。
+Answer: "丝"谐音"思"，表示思念之情。
 
-Now answer this question directly. Think through it carefully but only provide the final answer:
 Question: {question}
 Answer:"""
 
         elif subject == "algebra":
             # Few-shot prompting for Algebra questions
-            prompt = """You are a mathematics expert. Solve the problem step-by-step in your thinking, but only provide the final answer.
+            prompt = f"""Solve the math problem and provide only the final answer.
 
 Example 1:
 Question: Solve for x: 2x + 5 = 13
@@ -137,7 +136,6 @@ Example 3:
 Question: Simplify: (x + 3)(x - 3)
 Answer: x² - 9
 
-Now solve this problem. Show your reasoning, then provide the final answer clearly:
 Question: {question}
 Answer:"""
 
@@ -214,11 +212,11 @@ Answer:"""
 
             if needs_reasoning:
                 reasoning_indices.append(i)
-                reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject, enable_reasoning=True))
+                reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject))
                 reasoning_subjects.append(subject)
             else:
                 no_reasoning_indices.append(i)
-                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject, enable_reasoning=False))
+                no_reasoning_prompts.append(self._create_chat_prompt(q['question'], subject=subject))
 
         # =====================================================================
         # PHASE 2: BATCH EXECUTION
