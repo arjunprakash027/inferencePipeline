@@ -45,11 +45,10 @@ def log_experiment(name: str, method: str, num_questions: int, total_time: float
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run inference pipeline and log results.")
     parser.add_argument("--name", type=str, default="default_run", help="Name/Description of this experiment run")
-    parser.add_argument("--method", type=str, default="local", choices=["local", "server"], help="Inference method: local (default) or server")
     args = parser.parse_args()
 
     # Load questions
-    print(f"[MAIN] Starting pipeline run ({args.method})...")
+    print(f"[MAIN] Starting pipeline run...")
     input_file = "questions.xlsx"
     
     # Fallback for sample file name if needed
@@ -61,7 +60,7 @@ if __name__ == '__main__':
     print(f"[MAIN] Loaded {len(questions)} questions")
 
     # Initialize pipeline based on method
-    pipeline = loadPipeline(method=args.method)
+    pipeline = loadPipeline()
 
     # Run inference with simple timing
     start_time = time.perf_counter()
@@ -70,7 +69,7 @@ if __name__ == '__main__':
     total_time = end_time - start_time
 
     # Log results
-    log_experiment(args.name, args.method, len(questions), total_time)
+    log_experiment(args.name, "vllm", len(questions), total_time)
 
     # Save answers in JSON format
     output_file = "answers_output.json"
