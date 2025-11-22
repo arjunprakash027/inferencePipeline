@@ -19,7 +19,7 @@ from pathlib import Path
 
 # Configuration
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-CACHE_DIR = "./app/models"
+CACHE_DIR = "/app/models"
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
