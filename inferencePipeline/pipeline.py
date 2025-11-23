@@ -1,12 +1,13 @@
 """
 Tech Arena 2025 - Phase 2
-Efficient LLM Inference Pipeline
+Accuracy-Optimized Inference Pipeline with Qwen3-4B
 
 Strategy:
-- Llama-3.2-3B-Instruct for all subjects
-- Simple prompts with ANSWER: marker
-- Subject-optimized sampling parameters
-- Batched processing for efficiency
+- Qwen3-4B FP16 (superior model, better reasoning)
+- Advanced prompt engineering for algebra & Chinese
+- Enable <think> reasoning for algebra & Chinese (accuracy boost)
+- Sophisticated answer extraction and post-processing
+- Optimized sampling parameters per subject
 """
 
 import os
@@ -41,20 +42,20 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
 
 
 class InferencePipeline:
-    """Simple, efficient inference pipeline"""
+    """Accuracy-focused inference pipeline with Qwen3-4B"""
 
     def __init__(self):
         """Initialize pipeline with vLLM"""
 
         model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM...")
+        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} (FP16) with vLLM...")
 
-        # Optimized vLLM configuration for T4 GPU
+        # Optimized vLLM configuration for accuracy
         self.llm = LLM(
             model=model_path,
             dtype="float16",
             gpu_memory_utilization=0.90,
-            max_model_len=4096,
+            max_model_len=4096,  # Balanced context size
             enforce_eager=False,
             max_num_seqs=32,
             trust_remote_code=True,
@@ -64,65 +65,97 @@ class InferencePipeline:
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters optimized by subject
+        # Subject-specific sampling parameters (accuracy-optimized)
         self.params = {
             'algebra': SamplingParams(
-                temperature=0.1,   # Low temp for accuracy
-                top_p=0.9,
-                max_tokens=700,
-                stop=["<|eot_id|>", "\n\nQuestion:", "\n\nProblem:"],
+                temperature=0.05,  # Very low for maximum accuracy
+                top_p=0.95,
+                max_tokens=1200,   # Long for detailed step-by-step reasoning
+                repetition_penalty=1.05,
+                stop=["<|im_end|>", "<|endoftext|>"],
             ),
             'chinese': SamplingParams(
-                temperature=0.2,
-                top_p=0.9,
-                max_tokens=400,
-                stop=["<|eot_id|>", "\n\n问题"],
+                temperature=0.1,   # Low for factual accuracy
+                top_p=0.95,
+                max_tokens=800,
+                repetition_penalty=1.05,
+                stop=["<|im_end|>", "<|endoftext|>"],
             ),
-            'default': SamplingParams(
-                temperature=0.2,
-                top_p=0.9,
-                max_tokens=350,
-                stop=["<|eot_id|>", "\n\nQuestion:"],
+            'geography': SamplingParams(
+                temperature=0.15,
+                top_p=0.95,
+                max_tokens=600,
+                stop=["<|im_end|>", "<|endoftext|>"],
+            ),
+            'history': SamplingParams(
+                temperature=0.15,
+                top_p=0.95,
+                max_tokens=700,
+                stop=["<|im_end|>", "<|endoftext|>"],
             ),
         }
 
-        print("✅ Pipeline ready\n")
+        print("✅ Pipeline ready for high-accuracy inference\n")
 
     def _create_prompt(self, question: str, subject: str) -> str:
-        """Create simple prompts with ANSWER: marker"""
+        """Advanced prompt engineering with reasoning support"""
 
         if subject == "algebra":
-            prompt = f"""Solve this algebra problem step by step. At the end, clearly mark your final answer with "ANSWER:".
+            # Advanced algebra prompt with structured thinking
+            prompt = f"""You are an expert mathematics teacher. Solve this algebra problem with clear, systematic reasoning.
 
-Problem: {question}
+**Instructions:**
+1. Think through the problem step-by-step inside <think> tags
+2. Show all mathematical steps and intermediate calculations
+3. Verify your answer
+4. Provide the final answer after "ANSWER:"
 
-Solution:"""
+**Problem:** {question}
+
+Let me solve this systematically:
+
+<think>"""
 
         elif subject == "chinese":
-            prompt = f"""你是中国文化和语言专家。请回答以下问题，最后用"答案："标记你的最终答案。
+            # Advanced Chinese prompt with cultural context
+            prompt = f"""你是中国文化和语言的资深专家，拥有深厚的知识储备。请准确、全面地回答以下问题。
 
-问题：{question}
+**要求：**
+1. 在<think>标签内进行深入思考
+2. 确保答案准确、完整
+3. 提供充分的细节和背景信息
+4. 最后用"答案："标记最终答案
 
-回答："""
+**问题：** {question}
+
+让我仔细思考：
+
+<think>"""
 
         elif subject == "geography":
-            prompt = f"""Answer this geography question concisely. Mark your final answer with "ANSWER:".
+            # Geography prompt with factual focus
+            prompt = f"""You are a geography expert. Provide an accurate, well-structured answer to this question.
 
-Question: {question}
+**Question:** {question}
+
+Think carefully about the key facts, then provide a clear answer marked with "ANSWER:".
 
 Response:"""
 
         elif subject == "history":
-            prompt = f"""Answer this history question accurately. Mark your final answer with "ANSWER:".
+            # History prompt with context and accuracy
+            prompt = f"""You are a history scholar. Provide an accurate, comprehensive answer with relevant context.
 
-Question: {question}
+**Question:** {question}
+
+Provide a well-reasoned answer marked with "ANSWER:".
 
 Response:"""
 
         else:
-            prompt = f"""Answer this question clearly. Mark your final answer with "ANSWER:".
+            prompt = f"""Answer this question accurately and completely. Mark your final answer with "ANSWER:".
 
-Question: {question}
+**Question:** {question}
 
 Response:"""
 
@@ -134,62 +167,151 @@ Response:"""
         )
 
     def _extract_answer(self, text: str, subject: str) -> str:
-        """Extract final answer from response"""
+        """Advanced answer extraction with post-processing"""
 
-        # Strip <think> tags if present
-        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-        text = re.sub(r'</?think>', '', text).strip()
+        original_text = text
 
-        # Look for answer markers
-        if "ANSWER:" in text:
-            answer = text.split("ANSWER:")[-1].strip()
-        elif "答案：" in text or "答案:" in text:
-            answer = re.split(r'答案[：:]', text)[-1].strip()
+        # Step 1: Extract reasoning and answer sections
+        thinking_content = ""
+        answer_content = text
+
+        # Extract <think> content if present
+        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
+        if think_match:
+            thinking_content = think_match.group(1).strip()
+            # Remove <think> tags but keep the content for potential fallback
+            text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+            text = text.strip()
+
+        # Step 2: Look for explicit answer markers
+        answer = None
+
+        if subject == "chinese":
+            # Look for Chinese answer markers
+            if "答案：" in text or "答案:" in text:
+                answer = re.split(r'答案[：:]', text)[-1].strip()
+            elif "最终答案" in text:
+                answer = text.split("最终答案")[-1].strip()
+                answer = re.sub(r'^[：:\s]+', '', answer)
         else:
-            # Fallback: take last paragraph
-            lines = [l.strip() for l in text.split('\n') if l.strip()]
-            if lines:
-                answer = lines[-1]
+            # Look for English answer markers
+            if "ANSWER:" in text:
+                answer = text.split("ANSWER:")[-1].strip()
+            elif "Final Answer:" in text or "Final answer:" in text:
+                answer = re.split(r'[Ff]inal [Aa]nswer:', text)[-1].strip()
+
+        # Step 3: Subject-specific extraction if no marker found
+        if not answer or len(answer.strip()) < 3:
+            if subject == "algebra":
+                # Look for mathematical conclusion patterns
+                lines = [l.strip() for l in text.split('\n') if l.strip()]
+
+                # Prioritize lines with equations
+                for line in reversed(lines):
+                    # Look for conclusion patterns
+                    if any(pattern in line.lower() for pattern in ['therefore', 'thus', 'so', '因此', '所以']):
+                        if '=' in line or any(char.isdigit() for char in line):
+                            answer = line
+                            break
+                    # Direct equation answers
+                    if re.search(r'[a-z]\s*=\s*[\d\-\.]+', line, re.IGNORECASE):
+                        answer = line
+                        break
+
+                # Fallback: last line with mathematical content
+                if not answer:
+                    for line in reversed(lines):
+                        if '=' in line or re.search(r'\d+', line):
+                            answer = line
+                            break
+
+            elif subject == "chinese":
+                # Extract last substantial paragraph
+                paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+                if paragraphs:
+                    answer = paragraphs[-1]
+                else:
+                    # Fallback to last sentence
+                    sentences = re.split(r'[。！？]', text)
+                    sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
+                    if sentences:
+                        answer = sentences[-1] + '。'
+
             else:
-                answer = text
+                # For geography/history: extract last coherent paragraph
+                paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+                if paragraphs:
+                    answer = paragraphs[-1]
+                else:
+                    lines = [l.strip() for l in text.split('\n') if l.strip()]
+                    if lines:
+                        answer = lines[-1]
 
-        # Clean up and limit length
+        # Step 4: Final fallback
+        if not answer or len(answer.strip()) < 3:
+            lines = [l.strip() for l in original_text.split('\n') if l.strip()]
+            answer = lines[-1] if lines else original_text.strip()
+
+        # Step 5: Post-processing cleanup
         answer = answer.strip()
-        if len(answer) > 5000:
-            answer = answer[:5000]
 
-        return answer
+        # Remove common prefixes
+        answer = re.sub(r'^(Therefore,|Thus,|So,|Hence,|因此，|所以，)\s*', '', answer, flags=re.IGNORECASE)
+
+        # Remove "the answer is" type phrases
+        answer = re.sub(r'^(The answer is|Answer is|答案是)\s*[:：]?\s*', '', answer, flags=re.IGNORECASE)
+
+        # For algebra: clean up equation formatting
+        if subject == "algebra":
+            # Ensure proper spacing around equals
+            answer = re.sub(r'\s*=\s*', ' = ', answer)
+            # Remove trailing explanation after the equation
+            if '=' in answer:
+                parts = answer.split('.')
+                # Keep the part with the equation
+                for part in parts:
+                    if '=' in part:
+                        answer = part.strip()
+                        break
+
+        # Step 6: Length limit
+        if len(answer) > 5000:
+            answer = answer[:5000].rsplit('. ', 1)[0]
+            if not answer.endswith('.'):
+                answer += '.'
+
+        return answer.strip()
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Main inference method with batched processing"""
+        """Main inference with batched processing"""
 
         if not questions:
             return []
 
-        # Group by subject for batched processing
+        # Group by subject for optimized batching
         subject_batches = {}
         for i, q in enumerate(questions):
-            subject = q.get('subject', 'default')
+            subject = q.get('subject', 'geography')
             if subject not in subject_batches:
                 subject_batches[subject] = []
             subject_batches[subject].append((i, q))
 
-        # Process each subject batch
         results = [None] * len(questions)
 
+        # Process each subject batch
         for subject, batch in subject_batches.items():
             indices, qs = zip(*batch)
             prompts = [self._create_prompt(q['question'], subject) for q in qs]
 
-            print(f"Processing {len(prompts)} {subject} questions...")
+            print(f"🔍 Processing {len(prompts)} {subject} questions (accuracy mode)...")
 
-            # Get sampling params for this subject
-            params = self.params.get(subject, self.params['default'])
+            # Get optimized sampling params
+            params = self.params.get(subject, self.params['geography'])
 
-            # Generate
+            # Generate with vLLM
             outputs = self.llm.generate(prompts, params, use_tqdm=False)
 
-            # Extract answers
+            # Extract and post-process answers
             for idx, output, q in zip(indices, outputs, qs):
                 raw_answer = output.outputs[0].text.strip()
                 answer = self._extract_answer(raw_answer, subject)
@@ -199,7 +321,7 @@ Response:"""
                     "answer": answer
                 }
 
-        print(f"✅ Completed {len(results)} questions\n")
+        print(f"✅ Completed {len(results)} questions with high accuracy\n")
         return results
 
 
