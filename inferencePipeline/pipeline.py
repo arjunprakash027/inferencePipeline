@@ -3,10 +3,10 @@ Tech Arena 2025 - Phase 2
 Efficient LLM Inference Pipeline
 
 Strategy:
-- Use Llama-3.2-3B for fast, accurate inference
-- Simple prompts with ANSWER: marker for easy parsing
-- Batched processing by subject
-- No speculative decoding (causes accuracy issues on algebra)
+- Llama-3.2-3B-Instruct for all subjects
+- Simple prompts with ANSWER: marker
+- Subject-optimized sampling parameters
+- Batched processing for efficiency
 """
 
 import os
@@ -64,32 +64,32 @@ class InferencePipeline:
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters by subject
+        # Sampling parameters optimized by subject
         self.params = {
             'algebra': SamplingParams(
-                temperature=0.15,
+                temperature=0.1,   # Low temp for accuracy
                 top_p=0.9,
-                max_tokens=600,
-                stop=["<|im_end|>", "\n\nQuestion:", "\n\nProblem:"],
+                max_tokens=700,
+                stop=["<|eot_id|>", "\n\nQuestion:", "\n\nProblem:"],
             ),
             'chinese': SamplingParams(
                 temperature=0.2,
                 top_p=0.9,
                 max_tokens=400,
-                stop=["<|im_end|>", "\n\n问题"],
+                stop=["<|eot_id|>", "\n\n问题"],
             ),
             'default': SamplingParams(
                 temperature=0.2,
                 top_p=0.9,
                 max_tokens=350,
-                stop=["<|im_end|>", "\n\nQuestion:"],
+                stop=["<|eot_id|>", "\n\nQuestion:"],
             ),
         }
 
         print("✅ Pipeline ready\n")
 
     def _create_prompt(self, question: str, subject: str) -> str:
-        """Create simple, effective prompts with ANSWER: marker"""
+        """Create simple prompts with ANSWER: marker"""
 
         if subject == "algebra":
             prompt = f"""Solve this algebra problem step by step. At the end, clearly mark your final answer with "ANSWER:".
@@ -120,7 +120,7 @@ Question: {question}
 Response:"""
 
         else:
-            prompt = f"""Answer this question clearly and concisely. Mark your final answer with "ANSWER:".
+            prompt = f"""Answer this question clearly. Mark your final answer with "ANSWER:".
 
 Question: {question}
 
@@ -146,17 +146,15 @@ Response:"""
         elif "答案：" in text or "答案:" in text:
             answer = re.split(r'答案[：:]', text)[-1].strip()
         else:
-            # Fallback: take last paragraph or sentence
+            # Fallback: take last paragraph
             lines = [l.strip() for l in text.split('\n') if l.strip()]
             if lines:
                 answer = lines[-1]
             else:
                 answer = text
 
-        # Clean up
+        # Clean up and limit length
         answer = answer.strip()
-
-        # Limit length
         if len(answer) > 5000:
             answer = answer[:5000]
 
