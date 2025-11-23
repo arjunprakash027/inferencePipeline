@@ -1,6 +1,7 @@
 transformers==4.51.3
 torch
-vllm
+vllm>=0.6.3
 bitsandbytes
 accelerate
 autoawq
+qwen==1.0.0

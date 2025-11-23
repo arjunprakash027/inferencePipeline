@@ -1,6 +1,6 @@
 # Tech Arena 2025 - Phase 2 Inference Pipeline
 
-**Efficient LLM inference with AWQ 4-bit quantization, enhanced Chinese cultural context and algebra calculator**
+**Efficient LLM inference with Qwen3-4B, enhanced Chinese cultural context and thinking-based algebra reasoning**
 
 ## Quick Start
 
@@ -16,9 +16,9 @@ answers = pipeline(questions)
 
 ## Features
 
-- ✅ AWQ 4-bit quantization (3x faster)
+- ✅ Qwen3-4B model for superior mathematical reasoning
 - ✅ vLLM continuous batching
-- ✅ Python calculator for algebra (improved speed & accuracy)
+- ✅ Thinking-based algebra reasoning with post-processing (significantly improved accuracy)
 - ✅ Enhanced Chinese cultural context & knowledge base
 - ✅ T4-optimized
 
@@ -27,7 +27,7 @@ answers = pipeline(questions)
 - **Latency**: <60s for 500 questions
 - **Accuracy**: >75%
 - **Memory**: <5GB VRAM
-- **Algebra speedup**: 10x for simple calculations
+- **Algebra accuracy**: Dramatically improved with thinking + post-processing
 - **Chinese accuracy**: Improved with structured prompts
 
 ## See FINAL_SOLUTION.md for details

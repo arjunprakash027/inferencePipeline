@@ -16,7 +16,7 @@ from vllm import LLM, SamplingParams
 from pathlib import Path
 
 # Configuration
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B-Instruct")  # Switched to Qwen for better math reasoning
 CACHE_DIR = "/app/models"
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -76,43 +76,104 @@ class InferencePipeline:
         # Sampling parameters optimized for each subject
         self.params = {
             'algebra': SamplingParams(
-                temperature=0.1,  # Low temperature for deterministic accuracy
-                top_p=0.95,  # Good balance of creativity and focus
-                top_k=50,   # Limit to most likely tokens
-                max_tokens=800,  # Allow space for step-by-step reasoning
-                stop=["ANSWER:", "答案：", "答案:", "\n\nQuestion:", "\n\nProblem:"],
+                temperature=0.05,  # Very low temperature for deterministic accuracy
+                top_p=0.9,  # Focus on likely tokens
+                top_k=20,   # Narrower selection for consistency
+                max_tokens=1000,  # Allow space for step-by-step reasoning
+                stop=["Question:", "\n\nQuestion:"],  # Stop at next question, let extraction handle ANSWER
             ),
             'chinese': SamplingParams(
-                temperature=0.15,  # Slightly higher for natural language flow
+                temperature=0.1,  # Low for cultural accuracy
                 top_p=0.92,
-                top_k=40,
-                max_tokens=500,  # Appropriate for Chinese cultural questions
+                top_k=30,
+                max_tokens=600,  # Appropriate for Chinese cultural questions
                 stop=["答案：", "答案:", "END", "\n\n问题"],
             ),
             'geography': SamplingParams(
-                temperature=0.12,  # Low for factual accuracy
+                temperature=0.08,  # Low for factual accuracy
                 top_p=0.90,
-                top_k=45,
+                top_k=25,
                 max_tokens=400,
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
             'history': SamplingParams(
-                temperature=0.18,  # Slightly higher for narrative flow
+                temperature=0.12,  # Moderate for narrative flow
                 top_p=0.90,
-                top_k=50,
-                max_tokens=600,  # Allow for detailed historical context
+                top_k=35,
+                max_tokens=700,  # Allow for detailed historical context
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
             'default': SamplingParams(
-                temperature=0.2,  # Balanced for general questions
+                temperature=0.15,  # Balanced for general questions
                 top_p=0.9,
-                top_k=50,
-                max_tokens=450,
+                top_k=40,
+                max_tokens=500,
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
         }
 
         print("✅ Pipeline initialized with knowledge bases and optimized parameters\n")
+
+    def _is_algebra_question(self, question: str) -> bool:
+        """
+        Determine if a question is algebraic in nature.
+        """
+        question_lower = question.lower()
+
+        # Check for common algebra indicators
+        algebra_indicators = [
+            'x =', 'y =', 'z =',
+            'equation', 'solve', 'find x', 'find y', 'find z',
+            'algebra', 'polynomial', 'quadratic', 'linear',
+            'variable', 'unknown', 'calculate', 'compute',
+            # Common algebra words
+            'equation', 'formula', 'function', 'graph',
+            # Mathematical operators in context
+            '=', 'equals', 'plus', 'minus', 'times', 'divided by'
+        ]
+
+        # Check if question contains numbers and mathematical operations
+        has_numbers = any(c.isdigit() for c in question)
+        has_math_ops = any(op in question_lower for op in ['+', '-', '*', '/', '^', '**'])
+
+        # Check for algebraic language
+        has_indicators = any(indicator in question_lower for indicator in algebra_indicators)
+
+        # Additional check for common algebra problem formats
+        # e.g. "If 2x + 3 = 7, what is x?"
+        algebraic_pattern = any(pattern in question_lower for pattern in [
+            'what is x', 'what is y', 'what is the value', 'find the value',
+            'if x', 'when x', 'x equals', 'y equals'
+        ])
+
+        return has_numbers or has_math_ops or has_indicators or algebraic_pattern
+
+    def _is_chinese_question(self, question: str) -> bool:
+        """
+        Determine if a question is related to Chinese language or culture.
+        """
+        # Check for Chinese characters in the question
+        has_chinese_chars = any('\u4e00' <= char <= '\u9fff' for char in question)
+
+        # Check for keywords related to Chinese language/culture
+        chinese_keywords = [
+            'chinese', 'china', 'chinese language', 'mandarin', 'cantonese',
+            'confucius', 'confucian', 'tao', 'dao', 'buddhism', 'buddhist',
+            'dynasty', 'dynasties', 'tang', 'song', 'ming', 'qing', 'han', 'tang',
+            'pinyin', 'characters', 'character', 'simplified', 'traditional',
+            'culture', 'cultural', 'history', 'philosophy', 'poetry', 'poem',
+            'calligraphy', 'painting', 'art', 'temple', 'palace', 'forbidden city',
+            'great wall', 'kung fu', 'wushu', 'tai chi', 'martial arts', 'taoism', 'daoism',
+            'feng shui', 'dragon', 'phoenix', 'zodiac', 'chinese zodiac',
+            'festival', 'spring festival', 'lantern festival', 'mid-autumn',
+            'the capital of china', 'beijing', 'shanghai', 'guangzhou', 'chongqing',
+            'sichuan', 'shandong', 'cuisine', 'chinese food', 'dim sum'
+        ]
+
+        question_lower = question.lower()
+        has_chinese_keywords = any(keyword in question_lower for keyword in chinese_keywords)
+
+        return has_chinese_chars or has_chinese_keywords
 
     def _load_knowledge_base(self, kb_path: str) -> str:
         """Load knowledge base content from file"""
@@ -128,22 +189,17 @@ class InferencePipeline:
         """Create optimized prompts with knowledge base integration"""
 
         if subject == "algebra":
-            # Use algebra knowledge base for better mathematical reasoning
+            # Enhanced algebra prompt with simple thinking approach
             kb_context = self.algebra_kb[:3000] if self.algebra_kb else ""
-            prompt = f"""You are an expert mathematician. Use the following algebra knowledge base to solve problems:
+            prompt = f"""You are an expert mathematician. Solve this algebra problem step by step.
 
 {kb_context}
 
-Solve this step-by-step following mathematical best practices:
-1. Identify knowns and unknowns in the problem
-2. Choose the appropriate formula or method
-3. Perform calculations carefully showing your work
-4. Verify your solution by plugging back into original equation if applicable
-5. State your final answer clearly with "ANSWER:"
+Question: {question}
 
-Problem: {question}
+Think through this step by step, and at the end put your final answer after "ANSWER:"
 
-Solution:"""
+Thinking:"""
 
         elif subject == "chinese":
             # Use Chinese knowledge base for cultural and language expertise
@@ -196,7 +252,16 @@ Response:"""
         # Look for answer markers
         answer = ""
         if "ANSWER:" in text:
-            answer = text.split("ANSWER:")[-1].strip()
+            # For algebra, extract everything after ANSWER:
+            answer_parts = text.split("ANSWER:")
+            if len(answer_parts) > 1:
+                answer = answer_parts[-1].strip()
+                # Get just the first line after ANSWER: to get the final answer
+                answer_lines = answer.split('\n')
+                if len(answer_lines) > 0:
+                    answer = answer_lines[0].strip()
+            else:
+                answer = text.split("ANSWER:")[-1].strip()
         elif "答案：" in text or "答案:" in text:
             # Handle Chinese answer markers
             match = re.search(r'(?:答案[：:])\s*(.*?)(?:\n|$)', text, re.DOTALL)
