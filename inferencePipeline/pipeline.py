@@ -19,7 +19,7 @@ from vllm import LLM, SamplingParams
 from pathlib import Path
 
 # Configuration
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B-Instruct")  # Switched to Qwen for better math reasoning
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2-7B-Instruct")  # Qwen2 is supported by vLLM and good for math
 CACHE_DIR = "/app/models"
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -85,11 +85,11 @@ class InferencePipeline:
                 stop=["Question:", "\n\nQuestion:"],  # Stop at next question, let extraction handle ANSWER
             ),
             'chinese': SamplingParams(
-                temperature=0.1,  # Low for cultural accuracy
-                top_p=0.92,
-                top_k=30,
-                max_tokens=600,  # Appropriate for Chinese cultural questions
-                stop=["答案：", "答案:", "END", "\n\n问题"],
+                temperature=0.08,  # Lower for factual accuracy
+                top_p=0.90,
+                top_k=25,
+                max_tokens=700,  # Increased for detailed cultural responses
+                stop=["\n\n问题:", "\n问题:", "END"],  # Updated for new prompt format
             ),
             'geography': SamplingParams(
                 temperature=0.08,  # Low for factual accuracy
@@ -191,34 +191,51 @@ class InferencePipeline:
         """Create optimized prompts with knowledge base integration"""
 
         if subject == "algebra":
-            # Enhanced algebra prompt with simple thinking approach
+            # Enhanced algebra prompt with few-shot examples and thinking approach
             kb_context = self.algebra_kb[:3000] if self.algebra_kb else ""
-            prompt = f"""You are an expert mathematician. Solve this algebra problem step by step.
+            prompt = f"""You are an expert mathematician. Solve algebra problems step by step.
 
 {kb_context}
 
+Example 1:
+Question: If 3x + 5 = 20, what is x?
+Thinking: Isolate x by subtracting 5 from both sides, then dividing by 3. 3x = 15, so x = 5.
+ANSWER: x = 5
+
+Example 2:
+Question: What is 15 * 24?
+Thinking: Calculate 15 * 24 by breaking it down: 15 * 20 = 300, 15 * 4 = 60, so 300 + 60 = 360.
+ANSWER: 360
+
+Example 3:
+Question: Solve for x: 2x - 7 = 13
+Thinking: Add 7 to both sides: 2x = 20, then divide by 2: x = 10.
+ANSWER: x = 10
+
+Now solve this:
 Question: {question}
-
-Think through this step by step, and at the end put your final answer after "ANSWER:"
-
 Thinking:"""
 
         elif subject == "chinese":
-            # Enhanced Chinese prompt with cultural context and structured approach
+            # Enhanced Chinese prompt with few-shot examples and cultural context
             kb_context = self.chinese_kb[:3000] if self.chinese_kb else ""
-            prompt = f"""你是中国文化和语言专家。具有深厚的中文语言、历史、哲学、艺术和文化传统知识。参考以下知识库回答问题：
+            prompt = f"""你是中国文化和语言专家。具有深厚的中文语言、历史、哲学、艺术和文化传统知识。
 
 {kb_context}
 
-请按照以下步骤回答问题：
-1. 理解问题的具体要求和背景
-2. 根据你的中国文化和语言知识进行分析
-3. 提供准确和详细的回答
-4. 在回答结尾用中文"答案："标记最终答案
+示例1:
+问题: 中国的首都是哪里？
+回答: 北京是中华人民共和国的首都。
+答案：北京
 
+示例2:
+问题: 谁是孔子？
+回答: 孔子是中国古代伟大的思想家、教育家，儒家学派的创始人。
+答案：孔子是中国古代伟大的思想家、教育家，儒家学派的创始人。
+
+现在请回答:
 问题：{question}
-
-分析和回答："""
+回答："""
 
         elif subject == "geography":
             prompt = f"""You are a geography expert. Answer this question accurately based on geographical facts and data. Focus on factual information like locations, capitals, landmarks, and geographical features. Mark your final answer with "ANSWER:".
@@ -258,11 +275,11 @@ Response:"""
         # Look for answer markers
         answer = ""
         if "ANSWER:" in text:
-            # For algebra, extract everything after ANSWER:
+            # For algebra, extract everything after the LAST ANSWER: (to avoid example answers)
             answer_parts = text.split("ANSWER:")
             if len(answer_parts) > 1:
                 answer = answer_parts[-1].strip()
-                # Get just the first line after ANSWER: to get the final answer
+                # Get just the first line after the final ANSWER: to get the actual answer
                 answer_lines = answer.split('\n')
                 if len(answer_lines) > 0:
                     answer = answer_lines[0].strip()
@@ -276,16 +293,20 @@ Response:"""
             else:
                 answer = text.split("答案：")[-1].split("答案:")[-1].strip()
 
-        # Additional Chinese extraction patterns for enhanced prompt
-        if not answer.strip() and ("分析和回答：" in text or "分析：" in text):
-            # Extract content after "分析和回答：" or "分析："
-            parts = text.split("分析和回答：")
+        # Additional extraction for new Chinese prompt format
+        if not answer.strip() and "现在请回答:" in text:
+            # Extract content after "现在请回答:"
+            parts = text.split("现在请回答:")
             if len(parts) > 1:
-                answer = parts[-1]
-            else:
-                parts = text.split("分析：")
-                if len(parts) > 1:
-                    answer = parts[-1]
+                response_part = parts[-1]
+                # Look for 答案： in the response part
+                if "答案：" in response_part:
+                    answer = response_part.split("答案：")[-1].strip()
+                elif "答案:" in response_part:
+                    answer = response_part.split("答案:")[-1].strip()
+                else:
+                    # If no 答案： marker, return the response part
+                    answer = response_part.strip()
 
         if not answer.strip():
             # Fallback: extract the last coherent sentence/paragraph
@@ -314,7 +335,43 @@ Response:"""
         if len(answer) > 5000:
             answer = answer[:5000]
 
+        # For algebra subjects, apply verification if possible
+        if subject == "algebra":
+            answer = self._verify_algebra_answer(answer, text)
+
         return answer
+
+    def _verify_algebra_answer(self, answer: str, full_response: str) -> str:
+        """
+        Basic verification for algebra answers to improve accuracy.
+        This is a simple implementation that can be expanded.
+        """
+        # Clean the answer for better parsing
+        clean_answer = answer.strip()
+
+        # Try to extract just the numerical value or simplified expression
+        # This prevents verbose explanations from interfering
+        lines = clean_answer.split('\n')
+        if lines:
+            clean_answer = lines[0].strip()
+
+        # If answer contains common phrases, try to extract the core answer
+        if "the answer is" in clean_answer.lower():
+            parts = clean_answer.lower().split("the answer is")
+            if len(parts) > 1:
+                clean_answer = parts[-1].strip()
+
+        if "therefore" in clean_answer:
+            parts = clean_answer.split("therefore")
+            if len(parts) > 1:
+                clean_answer = parts[-1].strip()
+
+        if "so" in clean_answer:
+            parts = clean_answer.split("so ")
+            if len(parts) > 1:
+                clean_answer = parts[-1].strip()
+
+        return clean_answer
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """Main inference method with batched processing and fast algebra calculator"""

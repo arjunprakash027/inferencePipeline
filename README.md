@@ -1,6 +1,6 @@
 # Tech Arena 2025 - Phase 2 Inference Pipeline
 
-**Efficient LLM inference with Qwen3-4B, enhanced Chinese cultural context and thinking-based algebra reasoning**
+**Efficient LLM inference with Qwen2-7B, enhanced Chinese cultural context and thinking-based algebra reasoning**
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ answers = pipeline(questions)
 
 ## Features
 
-- ✅ Qwen3-4B model for superior mathematical reasoning
+- ✅ Qwen2-7B model for superior mathematical reasoning (vLLM supported)
 - ✅ vLLM continuous batching
 - ✅ Thinking-based algebra reasoning with post-processing (significantly improved accuracy)
 - ✅ Enhanced Chinese cultural context & knowledge base
