@@ -29,3 +29,4 @@ timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
 2025-11-23 01:26:56,default_run,vllm,10,21.48,2148.1,0.47
 2025-11-23 02:12:20,default_run,vllm,10,51.11,5111.4,0.2
 2025-11-23 02:16:24,default_run,vllm,10,32.25,3225.1,0.31
+2025-11-23 12:45:46,default_run,vllm,16,52.94,3308.5,0.3
