@@ -26,7 +26,7 @@ from pathlib import Path
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
 # Configuration
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-8B")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
@@ -45,13 +45,15 @@ MODEL_CONFIGS = {
     },
     "meta-llama/Llama-3.2-3B-Instruct": {
         "dtype": "half",  # FP16
-        "quantization": "awq",  # 4-bit quantization
-        "gpu_memory_utilization": 0.92,  # Higher for smaller 3B model
+        "quantization": None,  # ✅ Run in native FP16 (Fits easily on T4!)
+        "gpu_memory_utilization": 0.90,
+        "use_prequantized": False,
     },
     "meta-llama/Llama-3.1-8B-Instruct": {
         "dtype": "half",
-        "quantization": "awq",  # 4-bit quantization
-        "gpu_memory_utilization": 0.85,  # Slightly lower for quantized model
+        "quantization": "awq",  # ✅ Enabled - FP16 OOMs on T4!
+        "gpu_memory_utilization": 0.85,
+        "use_prequantized": False,
     }
 }
 
@@ -110,10 +112,14 @@ def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     
-    # Load model for quantization
+    # Load model for quantization with MEMORY OPTIMIZATIONS
+    # T4 has 15.3GB VRAM, 8B FP16 model is ~16GB → need CPU offloading
+    print("⚙️  Loading model with memory optimizations (CPU offloading enabled)...")
     model = AutoAWQForCausalLM.from_pretrained(
         model_path,
-        device_map="auto",
+        low_cpu_mem_usage=True,  # ✅ Reduce CPU RAM usage
+        max_memory={0: "13GB", "cpu": "30GB"},  # ✅ Limit GPU to 13GB, use CPU for overflow
+        offload_folder="offload_tmp",  # ✅ Temporary offload directory
         safetensors=True
     )
     
@@ -125,10 +131,8 @@ def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
         "version": "GEMM"
     }
     
-    # Simple calibration dataset (generic text samples)
-    # Using hardcoded samples for speed - AWQ is robust to calibration data
-    # Domain-specific calibration data for better activation profiling
-    # tailored to the Tech Arena tasks: Chinese, Algebra, and General Knowledge
+    # Domain-specific calibration data (REDUCED to 128 samples - AWQ only needs 128-256)
+    # Tailored to Tech Arena tasks: Chinese, Algebra, and General Knowledge
     calibration_data = [
         # Chinese (General & Cultural)
         "中国的首都是北京。",
@@ -162,9 +166,9 @@ def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
         "DNA replication is a fundamental process in cell division.",
         "The currency of Japan is the Yen.",
         "Marie Curie was the first woman to win a Nobel Prize.",
-    ] * 20  # Repeat to get ~500 samples
+    ] * 5  # Repeat to get 130 samples (optimal for AWQ)
     
-    print(f"📊 Using {len(calibration_data)} calibration samples")
+    print(f"📊 Using {len(calibration_data)} calibration samples (optimized for AWQ)")
     
     # Quantize the model
     print("⚙️  Quantizing model (this may take 5-10 minutes)...")
@@ -187,8 +191,15 @@ def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
     del tokenizer
     import gc
     import torch
+    import shutil
     gc.collect()
     torch.cuda.empty_cache()
+    
+    # Remove offload directory if it exists
+    if os.path.exists("offload_tmp"):
+        shutil.rmtree("offload_tmp")
+        print("🧹 Cleaned up offload directory")
+    
     print("🧹 Freed GPU memory after quantization")
     
     return quant_path
