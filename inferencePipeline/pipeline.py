@@ -42,7 +42,7 @@ SPECULATIVE_MAX_MODEL_LEN = 2048  # Shorter for draft model to save memory
 MODEL_CONFIGS = {
     "Qwen/Qwen3-4B": {
         "dtype": "half",  # FP16
-        "quantization": "awq",
+        "quantization": None,  # Disabled quantization for faster testing
         "gpu_memory_utilization": 0.90,
         "use_prequantized": False,
     },
@@ -247,28 +247,20 @@ class InferencePipeline:
         # Note: The user's new code assumes 8B AWQ is pre-quantized or handled differently.
         # We will keep the existing AWQ logic for 4B if selected, but adapt for the new config structure.
         
-        # Determine if we need to quantize first (for AWQ models)
-        if model_config['quantization'] == 'awq':
-             print(f"🚀 Preparing AWQ quantized model for {MODEL_NAME}...")
-             awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR, MODEL_NAME)
-             model_path = awq_model_path
-        else:
-             model_path = RAW_MODEL_PATH
-
+        # Use raw model path (no quantization for testing)
+        model_path = RAW_MODEL_PATH
         print("Using model path: ", model_path)
 
-        # Quantize draft model for speculative decoding
+        # Setup draft model for speculative decoding (no quantization)
         draft_model_path = None
         if ENABLE_SPECULATIVE_DECODING:
             print(f"🚀 Setting up speculative decoding with draft model: {DRAFT_MODEL_NAME}")
             try:
-                # Find and quantize draft model
-                raw_draft_path = find_model_path(DRAFT_MODEL_NAME, CACHE_DIR)
-                print(f"🚀 Preparing AWQ quantized draft model for {DRAFT_MODEL_NAME}...")
-                draft_model_path = quantize_model_awq(raw_draft_path, CACHE_DIR, DRAFT_MODEL_NAME)
-                print(f"✅ Draft model quantized and ready: {draft_model_path}")
+                # Find draft model (no quantization)
+                draft_model_path = find_model_path(DRAFT_MODEL_NAME, CACHE_DIR)
+                print(f"✅ Draft model ready: {draft_model_path}")
             except Exception as e:
-                print(f"⚠️  Failed to load/quantize draft model, disabling speculative decoding: {e}")
+                print(f"⚠️  Failed to load draft model, disabling speculative decoding: {e}")
                 draft_model_path = None
 
         # Build LLM arguments for main model
