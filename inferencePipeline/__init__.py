@@ -200,9 +200,9 @@ def loadPipeline(method: str = "server"):
     """
     # Ensure GGUF models exist (for server use)
     ensure_gguf_models_exist()
-    from .server_pipeline import loadServerPipeline
+    from .llama_cpp_pipeline import loadLlamaCppPipeline
     
-    return loadServerPipeline()
+    return loadLlamaCppPipeline()
     
     # if method == "server":
     #     print("[FACTORY] Initializing Server Pipeline (fast mode)...")

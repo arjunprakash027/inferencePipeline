@@ -1,108 +1,67 @@
 
 import time
-import asyncio
-import aiohttp
-import sys
 import os
-import random
-import string
+from llama_cpp import Llama
+
+# Create a dummy model if not exists (or use existing one)
+# We will use the one defined in settings if possible, or just download a small one?
+# For this test, we assume the model exists as per previous steps.
+# We will try to load the model from the path in settings.
+
 import json
+from pathlib import Path
 
-# Add current directory to path
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+def get_model_path():
+    try:
+        with open("/tmp/inferencePipeline/inferencePipeline/settings.json", "r") as f:
+            settings = json.load(f)
+        model_cfg = settings['model']
+        server_cfg = settings['server']
+        gguf_cache = Path(model_cfg['gguf_cache_dir'])
+        return str(gguf_cache / server_cfg['model_file'])
+    except Exception as e:
+        print(f"Error reading settings: {e}")
+        return None
 
-from inferencePipeline.server_pipeline import ServerInferencePipeline, SETTINGS
-
-async def measure_latency(pipeline, prompt, name, max_tokens=100):
-    print(f"\n--- Testing {name} ---")
-    print(f"Prompt length: {len(prompt)} chars")
-    
-    start_time = time.time()
-    
-    async with aiohttp.ClientSession() as session:
-        data = {
-            "prompt": prompt,
-            "n_predict": max_tokens,
-            "temperature": 0.0
-        }
-        
-        async with session.post(f"{pipeline.server.base_url}/completion", json=data) as response:
-            if response.status == 200:
-                result = await response.json()
-                # print(f"Response preview: {result['content'][:50]}...")
-            else:
-                text = await response.text()
-                print(f"Error: {response.status} - {text}")
-                return None
-
-    end_time = time.time()
-    latency = end_time - start_time
-    print(f"Latency: {latency:.4f} seconds")
-    return latency
-
-def generate_dummy_kb(length):
-    return ''.join(random.choices(string.ascii_letters + " ", k=length))
-
-async def main():
-    print("Initializing pipeline (this includes warmup)...")
-    # This starts the server with settings.json (should be 16384 context)
-    pipeline = ServerInferencePipeline()
-    
-    # Allow server to fully settle
-    await asyncio.sleep(2)
-    
-    # 1. Test Algebra (Context Size Check)
-    print("\n=== 1. Algebra Context Test ===")
-    algebra_q = "Solve the system: x + y = 10, x - y = 2"
-    algebra_prompt = pipeline.create_expert_prompt(algebra_q, "algebra")
-    
-    # This prompt is > 5000 tokens. If context is 2048, it will fail.
-    # If context is 16384, it should pass.
-    latency_alg = await measure_latency(pipeline, algebra_prompt, "Algebra Prompt (Large Context)")
-    
-    if latency_alg is not None:
-        print("✅ Algebra Test Passed! Context size is sufficient.")
-    else:
-        print("❌ Algebra Test Failed! Context size likely too small.")
+def test_caching():
+    model_path = get_model_path()
+    if not model_path or not os.path.exists(model_path):
+        print(f"Model not found at {model_path}. Cannot run test.")
         return
 
-    # 2. Test Caching (CAG Verification)
-    print("\n=== 2. Caching Performance Test ===")
-    
-    # Cached Case: Use Chinese KB (which was warmed up)
-    # We use a NEW question to ensure we are testing prefix caching, not exact response caching.
-    cached_prompt = pipeline.create_expert_prompt("中国古代四大发明是什么？", "chinese")
-    
-    # Uncached Case: Use a Dummy KB of same length
-    chinese_kb_len = len(pipeline.chinese_kb)
-    dummy_kb = generate_dummy_kb(chinese_kb_len)
-    
-    uncached_system = f"""你是中国文化和语言专家。使用以下参考资料回答问题。
+    print(f"Loading model from {model_path}...")
+    llm = Llama(
+        model_path=model_path,
+        n_ctx=2048,
+        n_gpu_layers=0, # Use CPU for consistent timing comparison or small GPU usage
+        verbose=False
+    )
 
-参考资料：
-{dummy_kb}
-
-基于以上参考资料，直接回答以下问题："""
-    uncached_user = "问题: 中国古代四大发明是什么？\n答案:"
-    uncached_prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{uncached_system}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{uncached_user}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
-
-    # Measure Latency
-    # We expect Cached to be much faster because it skips processing the huge KB
-    t_cached = await measure_latency(pipeline, cached_prompt, "Cached Context (Chinese KB)")
-    t_uncached = await measure_latency(pipeline, uncached_prompt, "Uncached Context (Random KB)")
+    # Define a long prefix (simulating a Knowledge Base)
+    prefix = "This is a long prefix that represents a knowledge base. " * 50 # ~500 tokens
     
-    if t_cached and t_uncached:
-        print("\n--- Results ---")
-        print(f"Cached Latency:   {t_cached:.4f}s")
-        print(f"Uncached Latency: {t_uncached:.4f}s")
-        
-        speedup = t_uncached / t_cached
-        print(f"Speedup: {speedup:.2f}x")
-        
-        if t_uncached > t_cached * 1.5:
-            print("✅ SUCCESS: Caching is working effectively!")
-        else:
-            print("⚠️  WARNING: Caching speedup is low. Check if warmup actually worked.")
+    prompt1 = prefix + "Question 1: What is the first letter of the alphabet? Answer:"
+    prompt2 = prefix + "Question 2: What is the second letter of the alphabet? Answer:"
+
+    print("\n--- Run 1 (Cold Cache) ---")
+    start = time.perf_counter()
+    llm(prompt1, max_tokens=5)
+    end = time.perf_counter()
+    time1 = end - start
+    print(f"Time 1: {time1:.4f}s")
+
+    print("\n--- Run 2 (Should be Warm Cache) ---")
+    start = time.perf_counter()
+    llm(prompt2, max_tokens=5)
+    end = time.perf_counter()
+    time2 = end - start
+    print(f"Time 2: {time2:.4f}s")
+
+    if time2 < time1 * 0.5:
+        print("\n✅ SUCCESS: Caching is working! Run 2 was significantly faster.")
+    else:
+        print("\n❌ FAILURE: Caching might not be working. Times are too similar.")
+        print("Note: If the model is very small or CPU is fast, the difference might be small.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    test_caching()
