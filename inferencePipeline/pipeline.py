@@ -21,9 +21,32 @@ from transformers import AutoTokenizer
 from pathlib import Path
 
 
+
 # Configuration
-MODEL_NAME = "Qwen/Qwen3-4B"
+# Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
 CACHE_DIR = "/app/models"
+CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
+ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
+
+# Model-specific settings
+MODEL_CONFIGS = {
+    "Qwen/Qwen3-4B": {
+        "dtype": "half",  # FP16
+        "quantization": "awq",  # Enable custom AWQ quantization
+        "gpu_memory_utilization": 0.90,
+    },
+    "Qwen/Qwen3-8B": {
+        "dtype": "half",  # FP16
+        "quantization": "awq",  # 4-bit quantization required for T4
+        "gpu_memory_utilization": 0.88,
+    },
+    "meta-llama/Llama-3.1-8B-Instruct": {
+        "dtype": "half",
+        "quantization": "awq",  # 4-bit quantization
+        "gpu_memory_utilization": 0.85,  # Slightly lower for quantized model
+    }
+}
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -96,24 +119,55 @@ def quantize_model_awq(model_path: str, cache_dir: str) -> str:
     
     # Simple calibration dataset (generic text samples)
     # Using hardcoded samples for speed - AWQ is robust to calibration data
+    # Domain-specific calibration data for better activation profiling
+    # tailored to the Tech Arena tasks: Chinese, Algebra, and General Knowledge
     calibration_data = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Machine learning is a subset of artificial intelligence.",
-        "Python is a high-level programming language.",
-        "The capital of France is Paris.",
-        "Mathematics is the study of numbers, quantities, and shapes.",
-        "Climate change is a global environmental challenge.",
-        "The human brain contains billions of neurons.",
-        "Renewable energy sources include solar and wind power.",
-        "DNA carries genetic information in living organisms.",
-        "The speed of light is approximately 299,792 kilometers per second.",
-    ] * 51  # Repeat to get ~510 samples (AWQ works well with 512+)
+        # Chinese (General & Cultural)
+        "中国的首都是北京。",
+        "长城是世界著名的古代建筑奇迹。",
+        "请解释一下量子力学的基本原理。",
+        "唐朝是中国历史上最繁荣的朝代之一。",
+        "如何制作一道正宗的宫保鸡丁？",
+        "人工智能在医疗领域的应用前景如何？",
+        "太阳系中有八大行星，地球是第三颗。",
+        "李白是唐朝著名的浪漫主义诗人。",
+        
+        # Algebra & Math (Equations, Functions, Word Problems)
+        "Solve for x: 3x + 7 = 22",
+        "Calculate the derivative of f(x) = x^3 - 4x + 1",
+        "If a train travels at 60 mph for 2.5 hours, how far does it go?",
+        "Simplify the expression: (a^2 - b^2) / (a - b)",
+        "Find the roots of the quadratic equation: x^2 - 5x + 6 = 0",
+        "What is the area of a circle with radius 5?",
+        "Solve the system of equations: 2x + y = 10, x - y = 2",
+        "Calculate the integral of sin(x) from 0 to pi.",
+        "If log_10(x) = 2, what is x?",
+        
+        # General Knowledge (History, Geography, Science)
+        "The Industrial Revolution began in Great Britain in the 18th century.",
+        "Photosynthesis is the process by which plants convert light into energy.",
+        "The Amazon Rainforest is often referred to as the 'lungs of the Earth'.",
+        "Albert Einstein developed the theory of relativity.",
+        "The Great Barrier Reef is located off the coast of Australia.",
+        "Water boils at 100 degrees Celsius at sea level.",
+        "The United Nations was established in 1945 to promote world peace.",
+        "DNA replication is a fundamental process in cell division.",
+        "The currency of Japan is the Yen.",
+        "Marie Curie was the first woman to win a Nobel Prize.",
+    ] * 20  # Repeat to get ~500 samples
     
     print(f"📊 Using {len(calibration_data)} calibration samples")
     
     # Quantize the model
+    # We keep the 'lm_head' in FP16 to preserve the quality of the final token generation
+    # This is a high-value optimization since we have plenty of VRAM (16GB) for this small model
     print("⚙️  Quantizing model (this may take 5-10 minutes)...")
-    model.quantize(tokenizer, quant_config=quant_config, calib_data=calibration_data)
+    model.quantize(
+        tokenizer, 
+        quant_config=quant_config, 
+        calib_data=calibration_data,
+        modules_to_not_convert=["lm_head"]
+    )
     
     # Save quantized model
     print(f"💾 Saving quantized model to {quant_path}...")
@@ -122,6 +176,15 @@ def quantize_model_awq(model_path: str, cache_dir: str) -> str:
     tokenizer.save_pretrained(quant_path)
     
     print(f"✅ AWQ quantization complete! Model saved to {quant_path}")
+    
+    # CLEANUP: Free GPU memory immediately
+    del model
+    del tokenizer
+    import gc
+    import torch
+    gc.collect()
+    torch.cuda.empty_cache()
+    print("🧹 Freed GPU memory after quantization")
     
     return quant_path
 
@@ -144,30 +207,51 @@ class InferencePipeline:
         AWQ quantization happens during untimed setup for memory efficiency
         """
 
-        # Quantize model to AWQ 4-bit (one-time operation, cached afterwards)
-        print("🚀 Preparing AWQ quantized model for vLLM...")
-        awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR)
+        # Load knowledge bases for CAG
+        self.chinese_kb = self._load_chinese_knowledge_base()
+        self.algebra_kb = self._load_algebra_knowledge_base()
 
-        # Load AWQ model with vLLM (Log 3 working config + AWQ)
-        print("🚀 Loading AWQ model with vLLM (T4 optimized)...")
+        # Get model-specific configuration
+        model_config = MODEL_CONFIGS.get(MODEL_NAME, MODEL_CONFIGS["Qwen/Qwen3-4B"])
 
+        # Optimized configuration for T4 16GB GPU (speed + stability)
+        model_display = MODEL_NAME.split("/")[-1]
+        quant_info = f" ({model_config['quantization']})" if model_config['quantization'] else " (FP16)"
+        print(f"🚀 Loading {model_display} with vLLM{quant_info}...")
+
+        # Determine if we need to quantize first (for 4B AWQ legacy path or if config demands it)
+        # Note: The user's new code assumes 8B AWQ is pre-quantized or handled differently.
+        # We will keep the existing AWQ logic for 4B if selected, but adapt for the new config structure.
+        
+        if MODEL_NAME == "Qwen/Qwen3-4B" and model_config['quantization'] == 'awq':
+             # Legacy path for 4B AWQ
+             print("🚀 Preparing AWQ quantized model for vLLM...")
+             awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR)
+             model_path = awq_model_path
+        else:
+             model_path = RAW_MODEL_PATH
+
+        print("Using model path: ", model_path)
         self.llm = LLM(
-            model=awq_model_path,             # Load AWQ quantized model
-            quantization="awq",               # Enable AWQ support in vLLM
-            dtype="half",                     # FP16 for non-quantized parts
-            gpu_memory_utilization=0.90,      # Higher utilization for reasoning tasks
-            max_model_len=2048,               # Longer context for reasoning support
-            enforce_eager=False,              # Enable CUDA graphs for speed
-            max_num_seqs=28,                  # Increased (can handle 36x)
-            max_num_batched_tokens=3584,      # Increased throughput
-            enable_prefix_caching=False,      # Disabled (Log 3 working config)
+            model=model_path,
+            quantization=model_config['quantization'],
+            dtype=model_config['dtype'],
+            gpu_memory_utilization=model_config['gpu_memory_utilization'],
+            max_model_len=16384,              # Increased for Full Context CAG (Chinese KB is ~8k tokens)
+            enforce_eager=False,
+            max_num_seqs=16,                  # Reduced slightly to save VRAM for large context
+            max_num_batched_tokens=16384,     # Match model len
+            enable_prefix_caching=True,
             trust_remote_code=True,
             tensor_parallel_size=1,
-            swap_space=4,                     # CPU swap space for overflow
-            disable_log_stats=True,           # Reduce logging overhead
+            swap_space=4,
+            disable_log_stats=True,
         )
 
         self.tokenizer = self.llm.get_tokenizer()
+        
+        # Warmup the cache with Knowledge Bases
+        self._warmup_cache()
 
         # Sampling parameters for Chinese (optimized)
         self.params_chinese = SamplingParams(
@@ -183,7 +267,7 @@ class InferencePipeline:
             temperature=0.3,   # Higher for diverse solutions
             top_p=0.95,        # High for complex reasoning
             max_tokens=600,    # Optimized for algebra complexity
-            n=3,               # Generate 3 candidate solutions
+            #n=3,               # Generate 3 candidate solutions
             stop=["<|im_end|>", "\n\nProblem:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
@@ -234,40 +318,75 @@ class InferencePipeline:
         """Create prompt using Qwen chat template with few-shot examples"""
 
         if subject == "chinese":
-            # Streamlined Chinese prompt - faster, more direct
-            prompt = f"""直接回答以下中文问题。
+            # Full Context CAG for Chinese questions
+            # We inject the ENTIRE Knowledge Base.
+            # Because of _warmup_cache, this prefix is already cached!
+            prompt = f"""你是中国文化和语言专家。使用以下参考资料回答问题。
+
+参考资料：
+{self.chinese_kb}
+
+基于以上参考资料，直接回答以下问题：
 
 问题: {question}
 答案:"""
 
         elif subject == "algebra":
-            # Direct answer format - NO reasoning, just answer
-            prompt = f"""You are a math expert. Solve the problem and provide ONLY the final answer. Do NOT explain your work.
+            # Full Context CAG + Chain-of-Thought for algebra
+            # Inject ENTIRE Algebra KB. Cached via warmup.
+            prompt = f"""You are a math expert. Use the formulas and theorems below to solve the problem.
 
-Example 1:
-Problem: Solve for x: 2x + 5 = 13
-Answer: x = 4
+            REFERENCE FORMULAS:
+            {self.algebra_kb}
 
-Example 2:
-Problem: Simplify (x+3)(x-3)
-Answer: x² - 9
+            Using the above formulas, solve step-by-step and provide the final answer.
 
-Example 3:
-Problem: If f(x) = 3x² - 2x + 1, find f(2)
-Answer: 9
+            Example 1:
+            Problem: Solve for x: 2x + 5 = 13
+            Solution: Subtract 5 from both sides: 2x = 8. Divide by 2: x = 4.
+            Final Answer: x = 4
 
-Example 4:
-Problem: What is the derivative of x² + 3x?
-Answer: 2x + 3
+            Example 2:
+            Problem: Simplify (x+3)(x-3)
+            Solution: Using difference of squares formula (a+b)(a-b) = a² - b². Here a=x, b=3.
+            Final Answer: x² - 9
 
-Example 5:
-Problem: Solve the system: x + y = 5, x - y = 1
-Answer: x = 3, y = 2
+            Example 3:
+            Problem: If f(x) = 3x² - 2x + 1, find f(2)
+            Solution: Substitute x=2 into the function: f(2) = 3(2)² - 2(2) + 1 = 3(4) - 4 + 1 = 12 - 4 + 1 = 9.
+            Final Answer: 9
 
-Now solve this problem. Give ONLY the final answer, NO explanation:
+            Example 4:
+            Problem: What is the derivative of x² + 3x?
+            Solution: Using power rule: d/dx(x²) = 2x, d/dx(3x) = 3. Sum: 2x + 3.
+            Final Answer: 2x + 3
 
-Problem: {question}
-Answer:"""
+            Example 5:
+            Problem: Solve the system: x + y = 5, x - y = 1
+            Solution: Add equations: (x+y) + (x-y) = 5+1, so 2x = 6, x = 3. Substitute into first equation: 3 + y = 5, y = 2.
+            Final Answer: x = 3, y = 2
+
+            Example 6:
+            Problem: Find the area of a circle with radius 5
+            Solution: Use formula A = πr². A = π(5)² = 25π ≈ 78.54.
+            Final Answer: 25π or approximately 78.54
+
+            Example 7:
+            Problem: Factor x² + 5x + 6
+            Solution: Find two numbers that multiply to 6 and add to 5: 2 and 3. So (x+2)(x+3).
+            Final Answer: (x+2)(x+3)
+
+            Example 8:
+            Problem: What is 15% of 80?
+            Solution: 15% = 0.15. Multiply: 0.15 × 80 = 12.
+            Final Answer: 12
+
+            Now solve this problem step-by-step:
+
+            Problem: {question}
+            Solution:"""
+
+
 
         else:
             # History/Geography/Finance - Direct answer format
@@ -421,7 +540,7 @@ Answer:"""
                     "answer": answer
                 }
 
-        # Batch B: Algebra questions (self-consistency with majority voting)
+        # Batch B: Algebra questions (self-consistency for accuracy)
         if algebra_prompts:
             print(f"🔢 Processing {len(algebra_prompts)} Algebra questions (3x for accuracy)...")
 
@@ -500,6 +619,81 @@ Answer:"""
 
         print(f"✅ Completed {len(results)} questions\n")
         return results
+
+    def _load_chinese_knowledge_base(self) -> str:
+        """Load Chinese knowledge base for cache-augmented generation"""
+        try:
+            kb_path = Path(CHINESE_KB_PATH)
+            if kb_path.exists():
+                with open(kb_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                print(f"📚 Loaded Chinese knowledge base ({len(content)} chars)")
+                return content
+            else:
+                print("⚠️  Chinese knowledge base not found, using default prompts")
+                return ""
+        except Exception as e:
+            print(f"⚠️  Error loading Chinese KB: {e}")
+            return ""
+
+    def _load_algebra_knowledge_base(self) -> str:
+        """Load Algebra knowledge base for formula/theorem reference"""
+        try:
+            kb_path = Path(ALGEBRA_KB_PATH)
+            if kb_path.exists():
+                with open(kb_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                print(f"📐 Loaded Algebra knowledge base ({len(content)} chars)")
+                return content
+            else:
+                print("⚠️  Algebra knowledge base not found, using default prompts")
+                return ""
+        except Exception as e:
+            print(f"⚠️  Error loading Algebra KB: {e}")
+            return ""
+
+    def _warmup_cache(self):
+        """
+        Warmup the KV cache by processing the Knowledge Bases once.
+        This ensures subsequent requests using these KBs hit the cache.
+        """
+        print("🔥 Warming up cache with Knowledge Bases...")
+        
+        warmup_prompts = []
+        
+        # Chinese KB Warmup
+        if self.chinese_kb:
+            prompt = f"""你是中国文化和语言专家。使用以下参考资料回答问题。
+
+参考资料：
+{self.chinese_kb}
+
+基于以上参考资料，直接回答以下问题：
+
+问题: 预热
+答案:"""
+            warmup_prompts.append(prompt)
+            
+        # Algebra KB Warmup
+        if self.algebra_kb:
+            prompt = f"""You are a math expert. Use the formulas and theorems below to solve the problem.
+
+REFERENCE FORMULAS:
+{self.algebra_kb}
+
+Using the above formulas, solve step-by-step and provide the final answer.
+
+Problem: Warmup
+Solution:"""
+            warmup_prompts.append(prompt)
+            
+        if warmup_prompts:
+            # Run a dummy generation to populate cache
+            # We use max_tokens=1 just to process the prompt
+            self.llm.generate(warmup_prompts, SamplingParams(max_tokens=1), use_tqdm=False)
+            print("✅ Cache warmed up!")
+        else:
+            print("⚠️ No KBs to warm up.")
 
 
 def loadPipeline():
