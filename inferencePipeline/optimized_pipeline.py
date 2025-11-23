@@ -1,12 +1,6 @@
 """
-Tech Arena 2025 - Phase 2
-High Accuracy LLM Inference Pipeline
-
-Strategy:
-- Use Llama-3.1-8B for maximum accuracy across all subjects
-- Enhanced prompts with detailed examples and context
-- Low temperature for deterministic responses
-- Specialized handling for algebra and Chinese
+Tech Arena 2025 - High Accuracy Inference Pipeline
+vLLM Implementation with Maximum Accuracy for All Subjects
 """
 
 import os
@@ -15,41 +9,21 @@ from typing import List, Dict
 from vllm import LLM, SamplingParams
 from pathlib import Path
 
-# Configuration - Using Llama-3.1-8B for maximum accuracy
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
-CACHE_DIR = "/app/models"
-
-def find_model_path(model_name: str, cache_dir: str) -> str:
-    """Find the actual snapshot path in HuggingFace cache"""
-    cache_path = Path(cache_dir)
-    hf_cache_name = "models--" + model_name.replace("/", "--")
-    model_cache = cache_path / hf_cache_name
-
-    if not model_cache.exists():
-        raise FileNotFoundError(f"Model cache not found at {model_cache}")
-
-    snapshots_dir = model_cache / "snapshots"
-    if not snapshots_dir.exists():
-        raise FileNotFoundError(f"Snapshots directory not found at {snapshots_dir}")
-
-    snapshots = list(snapshots_dir.iterdir())
-    if not snapshots:
-        raise FileNotFoundError(f"No snapshots found in {snapshots_dir}")
-
-    snapshot = sorted(snapshots, key=lambda p: p.stat().st_mtime, reverse=True)[0]
-    return str(snapshot)
-
-
-class InferencePipeline:
-    """High accuracy inference pipeline"""
+class BestPipeline:
+    """High accuracy pipeline focused on maximum accuracy across all subjects"""
 
     def __init__(self):
-        """Initialize pipeline with vLLM for maximum accuracy"""
+        """Initialize with vLLM and accuracy-focused settings"""
+        print("🚀 Loading Llama-3.1-8B with vLLM for maximum accuracy...")
 
-        model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM for maximum accuracy...")
+        # Use Llama-3.1-8B for maximum accuracy
+        model_name = "meta-llama/Llama-3.1-8B-Instruct"
+        cache_dir = "/app/models"
 
-        # Configure vLLM with accuracy-focused settings for Tesla T4
+        # Find model path
+        model_path = self._find_model_path(model_name, cache_dir)
+
+        # Initialize vLLM
         self.llm = LLM(
             model=model_path,
             dtype="float16",  # Use FP16 for T4 GPU
@@ -76,7 +50,21 @@ class InferencePipeline:
             frequency_penalty=0.1
         )
 
-        print("✅ High accuracy pipeline ready\n")
+        print("✅ High accuracy pipeline ready with vLLM\n")
+
+    def _find_model_path(self, model_name: str, cache_dir: str) -> str:
+        """Find model path in cache"""
+        from pathlib import Path
+        cache_path = Path(cache_dir)
+        hf_cache_name = "models--" + model_name.replace("/", "--")
+        model_cache = cache_path / hf_cache_name
+
+        if not model_cache.exists():
+            raise FileNotFoundError(f"Model cache not found: {model_cache}")
+
+        snapshots_dir = model_cache / "snapshots"
+        snapshots = sorted(snapshots_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True)
+        return str(snapshots[0]) if snapshots else str(snapshots_dir)
 
     def _create_prompt(self, question: str, subject: str) -> str:
         """Create highly effective prompts with examples and context for maximum accuracy"""
@@ -239,11 +227,7 @@ ANSWER:
         return answer
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Main inference method with accuracy-focused processing"""
-
-        if not questions:
-            return []
-
+        """High accuracy processing with vLLM"""
         print(f"Processing {len(questions)} questions with high accuracy focus...")
 
         # Create all prompts
@@ -272,7 +256,5 @@ ANSWER:
         print(f"✅ Completed {len(results)} questions with high accuracy focus\n")
         return results
 
-
 def loadPipeline():
-    """Entry point for evaluation system - returns high accuracy pipeline"""
-    return InferencePipeline()
+    return BestPipeline()
