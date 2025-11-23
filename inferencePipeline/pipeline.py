@@ -3,10 +3,10 @@ Tech Arena 2025 - Phase 2
 Efficient LLM Inference Pipeline
 
 Strategy:
-- Use Llama-3.2-3B for fast, accurate inference
-- Simple prompts with ANSWER: marker for easy parsing
+- Use Llama-3.2-3B for fast, accurate inference (FP16 precision)
+- Enhanced prompts with knowledge bases for better accuracy
 - Batched processing by subject
-- No speculative decoding (causes accuracy issues on algebra)
+- Optimized parameters for accuracy and speed balance
 """
 
 import os
@@ -41,86 +41,138 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
 
 
 class InferencePipeline:
-    """Simple, efficient inference pipeline"""
+    """Optimized inference pipeline with knowledge base integration"""
 
     def __init__(self):
-        """Initialize pipeline with vLLM"""
+        """Initialize pipeline with vLLM using FP16 for optimal T4 performance"""
 
         model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM...")
+        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM (FP16)...")
 
-        # Optimized vLLM configuration for T4 GPU
+        # Optimized vLLM configuration for T4 GPU with FP16
         self.llm = LLM(
             model=model_path,
-            dtype="float16",
-            gpu_memory_utilization=0.90,
+            dtype="float16",  # Optimal for T4 performance
+            gpu_memory_utilization=0.90,  # Use most of T4 memory efficiently
             max_model_len=4096,
-            enforce_eager=False,
-            max_num_seqs=32,
+            enforce_eager=False,  # Enable CUDA graphs for better performance
+            max_num_seqs=32,  # Maximize batch size for throughput
             trust_remote_code=True,
             tensor_parallel_size=1,
             disable_log_stats=True,
+            # Additional optimizations for T4
+            quantization=None,  # Using native FP16, no quantization
+            # Enable graph capture for better performance on repeated prompts
+            enable_prefix_caching=True,
         )
 
         self.tokenizer = self.llm.get_tokenizer()
 
-        # Sampling parameters by subject
+        # Load knowledge bases
+        self.algebra_kb = self._load_knowledge_base("inferencePipeline/algebra_kb.txt")
+        self.chinese_kb = self._load_knowledge_base("inferencePipeline/chinese_kb.txt")
+
+        # Sampling parameters optimized for each subject
         self.params = {
             'algebra': SamplingParams(
-                temperature=0.15,
-                top_p=0.9,
-                max_tokens=600,
-                stop=["<|im_end|>", "\n\nQuestion:", "\n\nProblem:"],
+                temperature=0.1,  # Low temperature for deterministic accuracy
+                top_p=0.95,  # Good balance of creativity and focus
+                top_k=50,   # Limit to most likely tokens
+                max_tokens=800,  # Allow space for step-by-step reasoning
+                stop=["ANSWER:", "答案：", "答案:", "\n\nQuestion:", "\n\nProblem:"],
             ),
             'chinese': SamplingParams(
-                temperature=0.2,
-                top_p=0.9,
+                temperature=0.15,  # Slightly higher for natural language flow
+                top_p=0.92,
+                top_k=40,
+                max_tokens=500,  # Appropriate for Chinese cultural questions
+                stop=["答案：", "答案:", "END", "\n\n问题"],
+            ),
+            'geography': SamplingParams(
+                temperature=0.12,  # Low for factual accuracy
+                top_p=0.90,
+                top_k=45,
                 max_tokens=400,
-                stop=["<|im_end|>", "\n\n问题"],
+                stop=["ANSWER:", "END", "\n\nQuestion:"],
+            ),
+            'history': SamplingParams(
+                temperature=0.18,  # Slightly higher for narrative flow
+                top_p=0.90,
+                top_k=50,
+                max_tokens=600,  # Allow for detailed historical context
+                stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
             'default': SamplingParams(
-                temperature=0.2,
+                temperature=0.2,  # Balanced for general questions
                 top_p=0.9,
-                max_tokens=350,
-                stop=["<|im_end|>", "\n\nQuestion:"],
+                top_k=50,
+                max_tokens=450,
+                stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
         }
 
-        print("✅ Pipeline ready\n")
+        print("✅ Pipeline initialized with knowledge bases and optimized parameters\n")
+
+    def _load_knowledge_base(self, kb_path: str) -> str:
+        """Load knowledge base content from file"""
+        try:
+            with open(kb_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content
+        except FileNotFoundError:
+            print(f"⚠️  Knowledge base not found: {kb_path}, using empty content")
+            return ""
 
     def _create_prompt(self, question: str, subject: str) -> str:
-        """Create simple, effective prompts with ANSWER: marker"""
+        """Create optimized prompts with knowledge base integration"""
 
         if subject == "algebra":
-            prompt = f"""Solve this algebra problem step by step. At the end, clearly mark your final answer with "ANSWER:".
+            # Use algebra knowledge base for better mathematical reasoning
+            kb_context = self.algebra_kb[:3000] if self.algebra_kb else ""
+            prompt = f"""You are an expert mathematician. Use the following algebra knowledge base to solve problems:
+
+{kb_context}
+
+Solve this step-by-step following mathematical best practices:
+1. Identify knowns and unknowns in the problem
+2. Choose the appropriate formula or method
+3. Perform calculations carefully showing your work
+4. Verify your solution by plugging back into original equation if applicable
+5. State your final answer clearly with "ANSWER:"
 
 Problem: {question}
 
 Solution:"""
 
         elif subject == "chinese":
-            prompt = f"""你是中国文化和语言专家。请回答以下问题，最后用"答案："标记你的最终答案。
+            # Use Chinese knowledge base for cultural and language expertise
+            kb_context = self.chinese_kb[:3000] if self.chinese_kb else ""
+            prompt = f"""你是中国文化和语言专家。参考以下知识库回答问题：
+
+{kb_context}
+
+请回答以下问题，展示你的推理过程，并最后用"答案："标记你的最终答案。
 
 问题：{question}
 
 回答："""
 
         elif subject == "geography":
-            prompt = f"""Answer this geography question concisely. Mark your final answer with "ANSWER:".
+            prompt = f"""You are a geography expert. Answer this question accurately based on geographical facts and data. Focus on factual information like locations, capitals, landmarks, and geographical features. Mark your final answer with "ANSWER:".
 
 Question: {question}
 
 Response:"""
 
         elif subject == "history":
-            prompt = f"""Answer this history question accurately. Mark your final answer with "ANSWER:".
+            prompt = f"""You are a history expert. Answer this question accurately based on historical facts, events, dates, and figures. Provide context and details where relevant. Mark your final answer with "ANSWER:".
 
 Question: {question}
 
 Response:"""
 
         else:
-            prompt = f"""Answer this question clearly and concisely. Mark your final answer with "ANSWER:".
+            prompt = f"""Answer this question clearly and concisely based on your knowledge. Mark your final answer with "ANSWER:".
 
 Question: {question}
 
@@ -134,29 +186,47 @@ Response:"""
         )
 
     def _extract_answer(self, text: str, subject: str) -> str:
-        """Extract final answer from response"""
+        """Extract final answer from response with improved accuracy"""
 
-        # Strip <think> tags if present
-        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-        text = re.sub(r'</?think>', '', text).strip()
+        # Strip special tokens and formatting
+        text = re.sub(r'<.*?>', '', text, flags=re.DOTALL)
+        text = text.strip()
 
         # Look for answer markers
+        answer = ""
         if "ANSWER:" in text:
             answer = text.split("ANSWER:")[-1].strip()
         elif "答案：" in text or "答案:" in text:
-            answer = re.split(r'答案[：:]', text)[-1].strip()
+            # Handle Chinese answer markers
+            match = re.search(r'(?:答案[：:])\s*(.*?)(?:\n|$)', text, re.DOTALL)
+            if match:
+                answer = match.group(1).strip()
+            else:
+                answer = text.split("答案：")[-1].split("答案:")[-1].strip()
         else:
-            # Fallback: take last paragraph or sentence
-            lines = [l.strip() for l in text.split('\n') if l.strip()]
+            # Fallback: extract the last coherent sentence/paragraph
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
             if lines:
-                answer = lines[-1]
+                # Look for the most complete answer at the end of response
+                for line in reversed(lines):
+                    if len(line) > 10:  # Not too short
+                        answer = line
+                        break
+                if not answer:
+                    answer = lines[-1]
             else:
                 answer = text
 
-        # Clean up
+        # Clean up the answer
         answer = answer.strip()
-
-        # Limit length
+        
+        # Remove any trailing text that looks like follow-up questions or instructions
+        answer = re.split(r'\n\s*\n|Question:|Problem:', answer)[0]
+        
+        # Ensure it doesn't end with incomplete phrases
+        answer = re.sub(r'\s*$', '', answer)  # Remove trailing whitespace
+        
+        # Limit length to 5000 characters as required
         if len(answer) > 5000:
             answer = answer[:5000]
 
