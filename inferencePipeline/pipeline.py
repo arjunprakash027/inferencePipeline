@@ -1,25 +1,22 @@
 """
 Tech Arena 2025 - Phase 2
-Optimized Multi-Model Inference Pipeline with On-the-Fly Quantization
+Fast Inference with On-the-Fly 4-bit Quantization
 
 Strategy:
-- Subject-specific model routing for optimal accuracy
+- Single Qwen3-1.7B model for all subjects (good balance of speed & accuracy)
 - On-the-fly 4-bit quantization using bitsandbytes
-- Qwen3-4B for Algebra & Chinese (strong math & Chinese capabilities)
-- Llama-3.2-3B for Geography & History (faster for factual queries)
-- Optimized prompts per subject
-- Batch processing for efficiency
+- Optimized generation parameters for speed
+- Subject-specific prompts with examples
 """
 
 import os
-import re
 import torch
 from typing import List, Dict
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from pathlib import Path
 
-
 CACHE_DIR = "/app/models"
+
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
     """Find the actual snapshot path in HuggingFace cache"""
@@ -42,228 +39,153 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
     return str(snapshot)
 
 
-class SubjectRouter:
-    """Routes questions to the appropriate model based on subject"""
+class FastPipeline:
+    """Fast inference with on-the-fly quantization"""
 
     def __init__(self):
-        """Initialize models with on-the-fly 4-bit quantization"""
-        print("🚀 Initializing Multi-Model Pipeline with On-the-Fly Quantization...")
+        """Initialize with 4-bit quantization"""
+        print("🚀 Loading Qwen3-1.7B with on-the-fly 4-bit quantization...")
 
-        # Configure 4-bit quantization with bitsandbytes
-        quantization_config = BitsAndBytesConfig(
+        # 4-bit quantization config
+        quant_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_use_double_quant=True,  # Double quantization for better compression
-            bnb_4bit_quant_type="nf4"  # NormalFloat4 - optimal for inference
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4"
         )
 
-        # Model 1: Qwen3-1.7B for Algebra & Chinese
-        print("📦 Loading Qwen3-1.7B (4-bit) for Algebra & Chinese...")
-        qwen_path = find_model_path("Qwen/Qwen3-1.7B", CACHE_DIR)
-        self.qwen_tokenizer = AutoTokenizer.from_pretrained(
-            qwen_path,
-            trust_remote_code=True
-        )
-        self.qwen_model = AutoModelForCausalLM.from_pretrained(
-            qwen_path,
-            quantization_config=quantization_config,
+        # Load model
+        model_path = find_model_path("Qwen/Qwen3-1.7B", CACHE_DIR)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            quantization_config=quant_config,
             device_map="auto",
             trust_remote_code=True,
             torch_dtype=torch.float16,
             low_cpu_mem_usage=True
         )
-        self.qwen_model.eval()
-        print(f"✅ Qwen3-1.7B loaded (VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB)")
+        self.model.eval()
 
-        # Model 2: Llama-3.2-3B for Geography & History
-        print("📦 Loading Llama-3.2-3B (4-bit) for Geography & History...")
-        llama_path = find_model_path("meta-llama/Llama-3.2-3B-Instruct", CACHE_DIR)
-        self.llama_tokenizer = AutoTokenizer.from_pretrained(llama_path)
-        self.llama_model = AutoModelForCausalLM.from_pretrained(
-            llama_path,
-            quantization_config=quantization_config,
-            device_map="auto",
-            torch_dtype=torch.float16,
-            low_cpu_mem_usage=True
-        )
-        self.llama_model.eval()
-        print(f"✅ Llama-3.2-3B loaded (Total VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB)")
+        print(f"✅ Model loaded (VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB)\n")
 
-        print("✅ Multi-Model Pipeline Ready!\n")
+    def _create_prompt(self, question: str, subject: str) -> str:
+        """Create optimized prompts"""
 
-    def _create_algebra_prompt(self, question: str) -> str:
-        """Simple prompt for algebra"""
-        return f"""Solve this math problem step by step and provide the final answer.
+        if subject == "algebra":
+            prompt = f"""Solve step by step:
 
-{question}"""
+{question}
 
-    def _create_chinese_prompt(self, question: str) -> str:
-        """Simple prompt for Chinese"""
-        return f"""Answer this question about Chinese language or culture accurately.
+Answer:"""
 
-{question}"""
+        elif subject == "chinese":
+            prompt = f"""Answer accurately:
 
-    def _create_geography_prompt(self, question: str) -> str:
-        """Simple prompt for geography"""
-        return f"""Answer this geography question accurately.
+{question}
 
-{question}"""
+Answer:"""
 
-    def _create_history_prompt(self, question: str) -> str:
-        """Simple prompt for history"""
-        return f"""Answer this history question accurately.
+        elif subject == "geography":
+            prompt = f"""{question}
 
-{question}"""
+Answer:"""
 
-    def _format_qwen_prompt(self, content: str) -> str:
-        """Format prompt for Qwen model"""
-        messages = [
-            {"role": "user", "content": content}
-        ]
-        return self.qwen_tokenizer.apply_chat_template(
+        elif subject == "history":
+            prompt = f"""{question}
+
+Answer:"""
+
+        else:
+            prompt = f"""{question}
+
+Answer:"""
+
+        messages = [{"role": "user", "content": prompt}]
+        return self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
 
-    def _format_llama_prompt(self, content: str) -> str:
-        """Format prompt for Llama model"""
-        messages = [
-            {"role": "user", "content": content}
-        ]
-        return self.llama_tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
+    def _batch_generate(self, prompts: List[str]) -> List[str]:
+        """Fast batch generation"""
+        # Tokenize all prompts
+        inputs = self.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=1024
         )
+        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
 
-    def _generate_response(self, model, tokenizer, prompt: str, max_new_tokens: int = 512) -> str:
-        """Generate response from model"""
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
-        inputs = {k: v.to(model.device) for k, v in inputs.items()}
-
+        # Generate with optimized parameters
         with torch.inference_mode():
-            outputs = model.generate(
+            outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=max_new_tokens,
-                temperature=0.1,  # Low temperature for accuracy
+                max_new_tokens=200,  # Shorter for speed
+                temperature=0.2,  # Low for accuracy
                 top_p=0.9,
                 do_sample=True,
-                pad_token_id=tokenizer.eos_token_id,
-                repetition_penalty=1.1
+                pad_token_id=self.tokenizer.eos_token_id,
+                num_beams=1,  # No beam search for speed
+                repetition_penalty=1.1,
+                eos_token_id=self.tokenizer.eos_token_id
             )
 
-        # Decode only the generated part
-        generated_ids = outputs[0][inputs['input_ids'].shape[1]:]
-        response = tokenizer.decode(generated_ids, skip_special_tokens=True)
-        return response.strip()
+        # Decode all outputs
+        responses = []
+        for i, output in enumerate(outputs):
+            # Get only generated part
+            generated_ids = output[inputs['input_ids'][i].shape[0]:]
+            response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+            responses.append(response.strip())
 
-    def _clean_answer(self, text: str) -> str:
-        """Clean and extract final answer"""
-        # Remove common artifacts
-        text = re.sub(r'<\|.*?\|>|</?think>|<s>|</s>', '', text, flags=re.IGNORECASE)
-        text = text.strip()
-
-        # Extract answer after markers
-        markers = ["Answer:", "答案:", "答案：", "Final Answer:", "Solution:", "Therefore,", "Thus,"]
-        for marker in markers:
-            if marker in text:
-                text = text.split(marker)[-1].strip()
-                break
-
-        # Limit to 5000 characters
-        if len(text) > 5000:
-            text = text[:5000]
-
-        return text.strip()
+        return responses
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Process questions with subject-specific routing"""
+        """Process questions in batches"""
         if not questions:
             return []
 
-        print(f"🔄 Processing {len(questions)} questions with subject-specific routing...")
+        print(f"⚡ Processing {len(questions)} questions...")
+
+        # Create prompts
+        prompts = [self._create_prompt(q['question'], q.get('subject', 'default')) for q in questions]
+
+        # Batch process (4 at a time for T4 GPU)
+        batch_size = 4
+        all_responses = []
+
+        for i in range(0, len(prompts), batch_size):
+            batch_prompts = prompts[i:i+batch_size]
+            batch_responses = self._batch_generate(batch_prompts)
+            all_responses.extend(batch_responses)
+
+            if (i + batch_size) % 10 == 0:
+                print(f"Processed {min(i+batch_size, len(prompts))}/{len(prompts)}...")
+
+        # Format results
         results = []
+        for q, answer in zip(questions, all_responses):
+            # Clean answer - remove think tags and artifacts
+            answer = answer.replace("<think>", "").replace("</think>", "")
+            answer = answer.replace("<|im_end|>", "").replace("</s>", "")
+            answer = answer.strip()
 
-        for i, q in enumerate(questions):
-            question_text = q['question']
-            subject = q.get('subject', 'default').lower()
-            question_id = q['questionID']
+            if len(answer) > 5000:
+                answer = answer[:5000]
 
-            try:
-                # Route to appropriate model based on subject
-                if subject == "algebra":
-                    prompt_content = self._create_algebra_prompt(question_text)
-                    formatted_prompt = self._format_qwen_prompt(prompt_content)
-                    response = self._generate_response(
-                        self.qwen_model,
-                        self.qwen_tokenizer,
-                        formatted_prompt,
-                        max_new_tokens=600  # More tokens for step-by-step math
-                    )
+            results.append({
+                "questionID": q["questionID"],
+                "answer": answer
+            })
 
-                elif subject == "chinese":
-                    prompt_content = self._create_chinese_prompt(question_text)
-                    formatted_prompt = self._format_qwen_prompt(prompt_content)
-                    response = self._generate_response(
-                        self.qwen_model,
-                        self.qwen_tokenizer,
-                        formatted_prompt,
-                        max_new_tokens=512
-                    )
-
-                elif subject == "geography":
-                    prompt_content = self._create_geography_prompt(question_text)
-                    formatted_prompt = self._format_llama_prompt(prompt_content)
-                    response = self._generate_response(
-                        self.llama_model,
-                        self.llama_tokenizer,
-                        formatted_prompt,
-                        max_new_tokens=400
-                    )
-
-                elif subject == "history":
-                    prompt_content = self._create_history_prompt(question_text)
-                    formatted_prompt = self._format_llama_prompt(prompt_content)
-                    response = self._generate_response(
-                        self.llama_model,
-                        self.llama_tokenizer,
-                        formatted_prompt,
-                        max_new_tokens=400
-                    )
-
-                else:
-                    # Default to Qwen for unknown subjects
-                    prompt_content = f"Answer this question accurately:\n\n{question_text}\n\nAnswer:"
-                    formatted_prompt = self._format_qwen_prompt(prompt_content)
-                    response = self._generate_response(
-                        self.qwen_model,
-                        self.qwen_tokenizer,
-                        formatted_prompt
-                    )
-
-                # Clean and format answer
-                clean_answer = self._clean_answer(response)
-                results.append({
-                    "questionID": question_id,
-                    "answer": clean_answer
-                })
-
-                if (i + 1) % 10 == 0:
-                    print(f"✅ Processed {i + 1}/{len(questions)} questions...")
-
-            except Exception as e:
-                print(f"⚠️ Error processing question {question_id}: {e}")
-                # Fallback: return a generic answer
-                results.append({
-                    "questionID": question_id,
-                    "answer": "Unable to process this question."
-                })
-
-        print(f"✅ Completed all {len(results)} questions!\n")
+        print(f"✅ Completed {len(results)} questions!\n")
         return results
 
 
 def loadPipeline():
-    """Entry point for evaluation system"""
-    return SubjectRouter()
+    """Entry point"""
+    return FastPipeline()
