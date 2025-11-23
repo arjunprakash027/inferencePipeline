@@ -24,10 +24,25 @@ from pathlib import Path
 
 
 # Configuration
-MODEL_NAME = "Qwen/Qwen3-4B"
+# Model options: "Qwen/Qwen3-4B" (recommended) or "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "chinese_knowledge_base.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "algebra_knowledge_base.txt")
+
+# Model-specific settings
+MODEL_CONFIGS = {
+    "Qwen/Qwen3-4B": {
+        "dtype": "half",  # FP16
+        "quantization": None,
+        "gpu_memory_utilization": 0.90,
+    },
+    "meta-llama/Llama-3.1-8B-Instruct": {
+        "dtype": "half",
+        "quantization": "awq",  # 4-bit quantization
+        "gpu_memory_utilization": 0.85,  # Slightly lower for quantized model
+    }
+}
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -80,20 +95,31 @@ class InferencePipeline:
         self.chinese_kb = self._load_chinese_knowledge_base()
         self.algebra_kb = self._load_algebra_knowledge_base()
 
-        # Optimized configuration for T4 16GB GPU (speed + stability)
-        print("🚀 Loading Qwen 4B model with vLLM (FP16)...")
+        # Get model-specific configuration
+        model_config = MODEL_CONFIGS.get(MODEL_NAME, MODEL_CONFIGS["Qwen/Qwen3-4B"])
 
-        self.llm = LLM(
-            model=RAW_MODEL_PATH,             # Load directly from HF cache
-            dtype="half",                     # FP16 for compute
-            gpu_memory_utilization=0.90,      # Higher utilization for better performance
-            max_model_len=2048,               # Safe context length for all questions
-            enforce_eager=False,              # Enable CUDA graphs for speed
-            trust_remote_code=True,
-            tensor_parallel_size=1,
-            swap_space=4,                     # CPU swap space for overflow
-            disable_log_stats=True,           # Reduce logging overhead
-        )
+        # Optimized configuration for T4 16GB GPU (speed + stability)
+        model_display = MODEL_NAME.split("/")[-1]
+        quant_info = f" ({model_config['quantization']})" if model_config['quantization'] else " (FP16)"
+        print(f"🚀 Loading {model_display} with vLLM{quant_info}...")
+
+        vllm_kwargs = {
+            "model": RAW_MODEL_PATH,
+            "dtype": model_config["dtype"],
+            "gpu_memory_utilization": model_config["gpu_memory_utilization"],
+            "max_model_len": 2048,
+            "enforce_eager": False,
+            "trust_remote_code": True,
+            "tensor_parallel_size": 1,
+            "swap_space": 4,
+            "disable_log_stats": True,
+        }
+
+        # Add quantization if specified
+        if model_config["quantization"]:
+            vllm_kwargs["quantization"] = model_config["quantization"]
+
+        self.llm = LLM(**vllm_kwargs)
 
         self.tokenizer = self.llm.get_tokenizer()
 
