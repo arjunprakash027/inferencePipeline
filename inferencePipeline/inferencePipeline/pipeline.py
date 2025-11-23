@@ -27,6 +27,7 @@ from pathlib import Path
 MODEL_NAME = "Qwen/Qwen3-4B"
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "chinese_knowledge_base.txt")
+ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "algebra_knowledge_base.txt")
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -75,8 +76,9 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
-        # Load Chinese knowledge base for CAG
+        # Load knowledge bases for CAG
         self.chinese_kb = self._load_chinese_knowledge_base()
+        self.algebra_kb = self._load_algebra_knowledge_base()
 
         # Optimized configuration for T4 16GB GPU (speed + stability)
         print("🚀 Loading Qwen 4B model with vLLM (FP16)...")
@@ -141,6 +143,22 @@ class InferencePipeline:
             print(f"⚠️  Error loading Chinese KB: {e}")
             return ""
 
+    def _load_algebra_knowledge_base(self) -> str:
+        """Load Algebra knowledge base for formula/theorem reference"""
+        try:
+            kb_path = Path(ALGEBRA_KB_PATH)
+            if kb_path.exists():
+                with open(kb_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                print(f"📐 Loaded Algebra knowledge base ({len(content)} chars)")
+                return content
+            else:
+                print("⚠️  Algebra knowledge base not found, using default prompts")
+                return ""
+        except Exception as e:
+            print(f"⚠️  Error loading Algebra KB: {e}")
+            return ""
+
     def _get_relevant_chinese_context(self, question: str) -> str:
         """Extract relevant context from knowledge base based on question keywords"""
         if not self.chinese_kb:
@@ -189,6 +207,67 @@ class InferencePipeline:
             context = "\n\n".join(relevant_sections[:2])  # Max 2 sections
             if len(context) > 1500:
                 context = context[:1500] + "..."
+            return context
+
+        return ""
+
+    def _get_relevant_algebra_context(self, question: str) -> str:
+        """Extract relevant formulas/theorems from algebra KB based on question"""
+        if not self.algebra_kb:
+            return ""
+
+        question_lower = question.lower()
+
+        # Keyword mapping for algebra topics
+        keyword_mapping = {
+            'quadratic|二次': 'Quadratic',
+            'factor|因式分解': 'Factoring',
+            'exponent|指数': 'Exponents',
+            'log|对数|logarithm': 'Logarithm',
+            'inequal|不等式': 'Inequalities',
+            'function|函数': 'Functions',
+            'sequence|序列|数列': 'Sequences',
+            'series|级数': 'Series',
+            'permutation|排列': 'Permutations',
+            'combination|组合': 'Combinations',
+            'binomial|二项式': 'Binomial',
+            'complex|复数': 'Complex',
+            'matrix|矩阵': 'Matrices',
+            'determinant|行列式': 'Determinants',
+            'vector|向量': 'Vectors',
+            'derivative|导数|微分': 'Derivatives',
+            'integral|积分': 'Integrals',
+            'sin|cos|tan|三角': 'Trigonometric',
+            'circle|椭圆|ellipse|hyperbola|parabola|圆锥曲线': 'Conic',
+            'prime|质数|gcd|lcm': 'Number Theory',
+            'set|集合': 'Set Theory',
+            'logic|逻辑': 'Logic',
+        }
+
+        # Find matching sections
+        relevant_sections = []
+        for pattern, topic in keyword_mapping.items():
+            if re.search(pattern, question_lower):
+                # Search for section in KB
+                section_markers = [f"=== {topic}", f"/ {topic}"]
+                for marker in section_markers:
+                    if marker in self.algebra_kb:
+                        start_idx = self.algebra_kb.find(marker)
+                        if start_idx != -1:
+                            # Find next section
+                            next_section = self.algebra_kb.find("\n===", start_idx + 10)
+                            if next_section == -1:
+                                section = self.algebra_kb[start_idx:start_idx+1200]
+                            else:
+                                section = self.algebra_kb[start_idx:next_section]
+                            relevant_sections.append(section.strip())
+                            break
+
+        if relevant_sections:
+            # Combine sections (limit to 1000 chars for context window)
+            context = "\n\n".join(relevant_sections[:2])
+            if len(context) > 1000:
+                context = context[:1000] + "..."
             return context
 
         return ""
@@ -250,8 +329,65 @@ class InferencePipeline:
 答案:"""
 
         elif subject == "algebra":
-            # Chain-of-Thought prompting for better reasoning
-            prompt = f"""You are a math expert. Solve the problem step-by-step, then provide the final answer.
+            # Cache-Augmented Generation + Chain-of-Thought for algebra
+            context = self._get_relevant_algebra_context(question)
+
+            if context:
+                # Use formula/theorem context + CoT
+                prompt = f"""You are a math expert. Use the formulas and theorems below to solve the problem.
+
+REFERENCE FORMULAS:
+{context}
+
+Using the above formulas, solve step-by-step and provide the final answer.
+
+Example 1:
+Problem: Solve for x: 2x + 5 = 13
+Solution: Subtract 5 from both sides: 2x = 8. Divide by 2: x = 4.
+Final Answer: x = 4
+
+Example 2:
+Problem: Simplify (x+3)(x-3)
+Solution: Using difference of squares formula (a+b)(a-b) = a² - b². Here a=x, b=3.
+Final Answer: x² - 9
+
+Example 3:
+Problem: If f(x) = 3x² - 2x + 1, find f(2)
+Solution: Substitute x=2 into the function: f(2) = 3(2)² - 2(2) + 1 = 3(4) - 4 + 1 = 12 - 4 + 1 = 9.
+Final Answer: 9
+
+Example 4:
+Problem: What is the derivative of x² + 3x?
+Solution: Using power rule: d/dx(x²) = 2x, d/dx(3x) = 3. Sum: 2x + 3.
+Final Answer: 2x + 3
+
+Example 5:
+Problem: Solve the system: x + y = 5, x - y = 1
+Solution: Add equations: (x+y) + (x-y) = 5+1, so 2x = 6, x = 3. Substitute into first equation: 3 + y = 5, y = 2.
+Final Answer: x = 3, y = 2
+
+Example 6:
+Problem: Find the area of a circle with radius 5
+Solution: Use formula A = πr². A = π(5)² = 25π ≈ 78.54.
+Final Answer: 25π or approximately 78.54
+
+Example 7:
+Problem: Factor x² + 5x + 6
+Solution: Find two numbers that multiply to 6 and add to 5: 2 and 3. So (x+2)(x+3).
+Final Answer: (x+2)(x+3)
+
+Example 8:
+Problem: What is 15% of 80?
+Solution: 15% = 0.15. Multiply: 0.15 × 80 = 12.
+Final Answer: 12
+
+Now solve this problem step-by-step:
+
+Problem: {question}
+Solution:"""
+            else:
+                # Fallback without context
+                prompt = f"""You are a math expert. Solve the problem step-by-step, then provide the final answer.
 
 Example 1:
 Problem: Solve for x: 2x + 5 = 13
