@@ -7,10 +7,11 @@ OPTIMIZATIONS:
 ✅ FP16 precision for T4 GPU (16GB)
 ✅ Memory-optimized batch processing for T4 constraints
 ✅ Batched processing by subject
-✅ Few-shot prompting for Chinese and Algebra
-✅ Answer extraction (returns only final answers, not reasoning)
+✅ Chain-of-Thought (CoT) prompting for Algebra (8 examples)
+✅ Self-Consistency for Algebra (n=5 diverse solutions, majority vote)
 ✅ Cache-Augmented Generation (CAG) for Chinese questions
-✅ Comprehensive Chinese knowledge base (50,000+ chars)
+✅ Comprehensive Chinese knowledge base (32KB, 1055 lines)
+✅ Answer extraction (returns only final answers, not reasoning)
 ✅ CPU swap space for memory overflow handling
 """
 
@@ -105,10 +106,10 @@ class InferencePipeline:
 
         # Sampling parameters for Algebra (self-consistency for accuracy)
         self.params_algebra = SamplingParams(
-            temperature=0.3,   # Higher for diverse solutions
+            temperature=0.4,   # Slightly higher for more diversity
             top_p=0.95,        # High for complex reasoning
-            max_tokens=600,    # Optimized for algebra complexity
-            n=3,               # Generate 3 candidate solutions
+            max_tokens=800,    # Increased for Chain-of-Thought reasoning
+            n=5,               # Generate 5 candidate solutions (more diverse)
             stop=["<|im_end|>", "\n\nProblem:", "\n\nExample", "\n\n\n"],
             skip_special_tokens=True,
         )
@@ -249,33 +250,53 @@ class InferencePipeline:
 答案:"""
 
         elif subject == "algebra":
-            # Direct answer format - NO reasoning, just answer
-            prompt = f"""You are a math expert. Solve the problem and provide ONLY the final answer. Do NOT explain your work.
+            # Chain-of-Thought prompting for better reasoning
+            prompt = f"""You are a math expert. Solve the problem step-by-step, then provide the final answer.
 
 Example 1:
 Problem: Solve for x: 2x + 5 = 13
-Answer: x = 4
+Solution: Subtract 5 from both sides: 2x = 8. Divide by 2: x = 4.
+Final Answer: x = 4
 
 Example 2:
 Problem: Simplify (x+3)(x-3)
-Answer: x² - 9
+Solution: Using difference of squares formula (a+b)(a-b) = a² - b². Here a=x, b=3.
+Final Answer: x² - 9
 
 Example 3:
 Problem: If f(x) = 3x² - 2x + 1, find f(2)
-Answer: 9
+Solution: Substitute x=2 into the function: f(2) = 3(2)² - 2(2) + 1 = 3(4) - 4 + 1 = 12 - 4 + 1 = 9.
+Final Answer: 9
 
 Example 4:
 Problem: What is the derivative of x² + 3x?
-Answer: 2x + 3
+Solution: Using power rule: d/dx(x²) = 2x, d/dx(3x) = 3. Sum: 2x + 3.
+Final Answer: 2x + 3
 
 Example 5:
 Problem: Solve the system: x + y = 5, x - y = 1
-Answer: x = 3, y = 2
+Solution: Add equations: (x+y) + (x-y) = 5+1, so 2x = 6, x = 3. Substitute into first equation: 3 + y = 5, y = 2.
+Final Answer: x = 3, y = 2
 
-Now solve this problem. Give ONLY the final answer, NO explanation:
+Example 6:
+Problem: Find the area of a circle with radius 5
+Solution: Use formula A = πr². A = π(5)² = 25π ≈ 78.54.
+Final Answer: 25π or approximately 78.54
+
+Example 7:
+Problem: Factor x² + 5x + 6
+Solution: Find two numbers that multiply to 6 and add to 5: 2 and 3. So (x+2)(x+3).
+Final Answer: (x+2)(x+3)
+
+Example 8:
+Problem: What is 15% of 80?
+Solution: 15% = 0.15. Multiply: 0.15 × 80 = 12.
+Final Answer: 12
+
+Now solve this problem step-by-step:
 
 Problem: {question}
-Answer:"""
+Solution:"""
 
         else:
             # History/Geography/Finance - Direct answer format
