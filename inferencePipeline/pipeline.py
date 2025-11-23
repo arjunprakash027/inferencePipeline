@@ -1,6 +1,6 @@
 """
 Tech Arena 2025 - Phase 2
-High-Accuracy Pipeline with Llama-3.1-8B
+Speed-Optimized High-Accuracy Pipeline
 """
 
 import torch
@@ -16,25 +16,22 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
     cache_path = Path(cache_dir)
     hf_cache_name = "models--" + model_name.replace("/", "--")
     model_cache = cache_path / hf_cache_name
-
     if not model_cache.exists():
         raise FileNotFoundError(f"Model not found: {model_cache}")
-
     snapshots_dir = model_cache / "snapshots"
     snapshots = list(snapshots_dir.iterdir())
     if not snapshots:
         raise FileNotFoundError(f"No snapshots")
-
     return str(sorted(snapshots, key=lambda p: p.stat().st_mtime, reverse=True)[0])
 
 
-class HighAccuracyPipeline:
-    """Maximum accuracy with Llama-3.1-8B"""
+class FastAccuratePipeline:
+    """Optimized for speed + accuracy"""
 
     def __init__(self):
-        print("🚀 Loading Llama-3.1-8B with 4-bit quantization...")
+        print("🚀 Loading Llama-3.2-3B with 4-bit quantization...")
 
-        # Aggressive 4-bit quantization for 8B model
+        # 4-bit quantization
         quant_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.float16,
@@ -42,8 +39,8 @@ class HighAccuracyPipeline:
             bnb_4bit_quant_type="nf4"
         )
 
-        # Load Llama-3.1-8B with on-the-fly quantization
-        model_path = find_model_path("meta-llama/Llama-3.1-8B-Instruct", CACHE_DIR)
+        # Load 3B model for speed
+        model_path = find_model_path("meta-llama/Llama-3.2-3B-Instruct", CACHE_DIR)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.padding_side = "left"
@@ -60,28 +57,17 @@ class HighAccuracyPipeline:
         print(f"✅ Ready! VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB\n")
 
     def _create_prompt(self, question: str, subject: str) -> str:
-        """Create subject-optimized prompts"""
+        """Concise prompts for speed"""
 
         if subject == "algebra":
-            content = f"""Solve this algebra problem step by step. Show your work clearly and state the final answer.
+            content = f"""Solve step by step:
 
-Example:
-Q: If 3x + 2 = 11, what is x?
-A: Step 1: Subtract 2 from both sides
-   3x + 2 - 2 = 11 - 2
-   3x = 9
+Example: 3x + 2 = 11 → 3x = 9 → x = 3
 
-   Step 2: Divide both sides by 3
-   x = 9 ÷ 3
-   x = 3
-
-   Final answer: x = 3
-
-Now solve:
 {question}"""
 
         elif subject == "chinese":
-            content = f"""You are an expert in Chinese language, literature, history, and culture. Provide accurate and detailed information.
+            content = f"""Answer accurately about Chinese language/culture:
 
 {question}"""
 
@@ -96,24 +82,22 @@ Now solve:
         )
 
     def _generate_batch(self, prompts: List[str]) -> List[str]:
-        """Generate answers with quality settings"""
+        """Fast batch generation"""
         inputs = self.tokenizer(
             prompts,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=1024
+            max_length=512
         ).to(self.model.device)
 
         with torch.inference_mode():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=300,
-                temperature=0.15,  # Low for accuracy
-                top_p=0.95,
-                do_sample=True,
-                pad_token_id=self.tokenizer.eos_token_id,
-                repetition_penalty=1.05
+                max_new_tokens=100,  # Very short for maximum speed
+                temperature=0,  # Greedy for fastest generation
+                do_sample=False,
+                pad_token_id=self.tokenizer.eos_token_id
             )
 
         answers = []
@@ -125,7 +109,7 @@ Now solve:
         return answers
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Process questions with high accuracy"""
+        """Fast batch processing"""
         if not questions:
             return []
 
@@ -138,8 +122,8 @@ Now solve:
             prompt = self._create_prompt(q['question'], subject)
             prompts.append(prompt)
 
-        # Batch process (smaller batches for 8B model)
-        batch_size = 4
+        # Large batches for maximum speed
+        batch_size = 16
         all_answers = []
 
         for i in range(0, len(prompts), batch_size):
@@ -150,7 +134,7 @@ Now solve:
         # Format results
         results = []
         for q, answer in zip(questions, all_answers):
-            # Clean answer
+            # Clean
             answer = answer.replace("<think>", "").replace("</think>", "")
             answer = answer.replace("assistant\n\n", "").replace("assistant\n", "")
             answer = answer.strip()
@@ -169,4 +153,4 @@ Now solve:
 
 def loadPipeline():
     """Entry point"""
-    return HighAccuracyPipeline()
+    return FastAccuratePipeline()
