@@ -72,36 +72,10 @@ class FastPipeline:
     def _create_prompt(self, question: str, subject: str) -> str:
         """Create optimized prompts"""
 
-        if subject == "algebra":
-            prompt = f"""Solve step by step:
-
-{question}
-
-Answer:"""
-
-        elif subject == "chinese":
-            prompt = f"""Answer accurately:
-
-{question}
-
-Answer:"""
-
-        elif subject == "geography":
-            prompt = f"""{question}
-
-Answer:"""
-
-        elif subject == "history":
-            prompt = f"""{question}
-
-Answer:"""
-
-        else:
-            prompt = f"""{question}
-
-Answer:"""
-
-        messages = [{"role": "user", "content": prompt}]
+        # Simple direct prompt for all subjects
+        messages = [
+            {"role": "user", "content": question}
+        ]
         return self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -124,7 +98,7 @@ Answer:"""
         with torch.inference_mode():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=200,  # Shorter for speed
+                max_new_tokens=300,  # Allow complete answers
                 temperature=0.2,  # Low for accuracy
                 top_p=0.9,
                 do_sample=True,
