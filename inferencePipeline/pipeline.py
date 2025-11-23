@@ -1,6 +1,6 @@
 """
 Tech Arena 2025 - Phase 2
-Efficient LLM Inference Pipeline
+Efficient LLM Inference Pipeline with optional AWQ quantization
 
 Strategy:
 - Use Llama-3.2-3B for fast, accurate inference (FP16 precision)
@@ -18,6 +18,21 @@ from pathlib import Path
 # Configuration
 MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
 CACHE_DIR = "/app/models"
+
+# Model configuration dictionary
+MODEL_CONFIGS = {
+    "meta-llama/Llama-3.2-3B-Instruct": {
+        "dtype": "float16",
+        "quantization": "awq",
+        "gpu_memory_utilization": 0.85,
+    },
+    # fallback / default config (FP16, no quantization)
+    "default": {
+        "dtype": "float16",
+        "quantization": None,
+        "gpu_memory_utilization": 0.90,
+    },
+}
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
     """Find the actual snapshot path in HuggingFace cache"""
@@ -40,29 +55,110 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
     return str(snapshot)
 
 
+def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
+    """Quantize a model to 4‑bit AWQ on‑the‑fly.
+    Returns the path to the quantized checkpoint. If the checkpoint already exists, it is reused.
+    """
+    from awq import AutoAWQForCausalLM
+    from transformers import AutoTokenizer
+    import torch, shutil, gc, os
+
+    safe_name = model_name.split('/')[-1].lower().replace('-', '_')
+    quant_path = os.path.join(cache_dir, f"{safe_name}_awq")
+
+    if os.path.isdir(quant_path) and os.path.isfile(os.path.join(quant_path, "config.json")):
+        print(f"✅ AWQ quantized model already cached at {quant_path}")
+        return quant_path
+
+    print(f"🔧 Quantizing {model_name} to 4‑bit AWQ …")
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+    # Load model with CPU off‑loading to avoid OOM on T4
+    model = AutoAWQForCausalLM.from_pretrained(
+        model_path,
+        low_cpu_mem_usage=True,
+        max_memory={0: "13GB", "cpu": "30GB"},
+        offload_folder="offload_tmp",
+        safetensors=True,
+    )
+
+    # Simple calibration set (20 diverse sentences)
+    calibration_data = [
+        "中国的首都是北京。",
+        "Solve for x: 3x + 7 = 22",
+        "The Industrial Revolution began in Great Britain.",
+        "长城是世界著名的古代建筑奇迹。",
+        "Calculate the derivative of f(x) = x^3 - 4x + 1",
+        "Photosynthesis is the process by which plants convert light into energy.",
+        "If a train travels at 60 mph for 2.5 hours, how far does it go?",
+        "唐朝是中国历史上最繁荣的朝代之一。",
+        "Find the roots of the quadratic equation: x^2 - 5x + 6 = 0",
+        "The Amazon Rainforest is often referred to as the 'lungs of the Earth'.",
+        "人工智能在医疗领域的应用前景如何？",
+        "What is the area of a circle with radius 5?",
+        "Albert Einstein developed the theory of relativity.",
+        "Solve the system of equations: 2x + y = 10, x - y = 2",
+        "The currency of Japan is the Yen.",
+        "Calculate the integral of sin(x) from 0 to pi.",
+        "Marie Curie was the first woman to win a Nobel Prize.",
+        "If log_10(x) = 2, what is x?",
+        "The Great Barrier Reef is located off the coast of Australia.",
+        "Water boils at 100 degrees Celsius at sea level.",
+    ]
+
+    quant_config = {
+        "zero_point": True,
+        "q_group_size": 128,
+        "w_bit": 4,
+        "version": "GEMM",
+    }
+
+    model.quantize(tokenizer, quant_config=quant_config, calib_data=calibration_data)
+
+    os.makedirs(quant_path, exist_ok=True)
+    model.save_quantized(quant_path, safetensors=True, shard_size="4GB")
+    tokenizer.save_pretrained(quant_path)
+    print(f"✅ AWQ quantization complete. Model saved to {quant_path}")
+
+    # Cleanup GPU/CPU memory
+    del model, tokenizer
+    gc.collect()
+    torch.cuda.empty_cache()
+    if os.path.isdir("offload_tmp"):
+        shutil.rmtree("offload_tmp", ignore_errors=True)
+    return quant_path
+
+
 class InferencePipeline:
     """Optimized inference pipeline with knowledge base integration"""
 
     def __init__(self):
-        """Initialize pipeline with vLLM using FP16 for optimal T4 performance"""
+        """Initialize pipeline with vLLM using FP16 (or AWQ) for optimal T4 performance"""
 
-        model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM (FP16)...")
+        # Resolve raw model path first
+        raw_model_path = find_model_path(MODEL_NAME, CACHE_DIR)
+        # Determine configuration (fallback to default)
+        model_cfg = MODEL_CONFIGS.get(MODEL_NAME, MODEL_CONFIGS["default"])
+        # If AWQ quantization is requested, perform on‑the‑fly quantization
+        if model_cfg.get("quantization") == "awq":
+            print("🔧 Starting AWQ on‑the‑fly quantization...")
+            model_path = quantize_model_awq(raw_model_path, CACHE_DIR, MODEL_NAME)
+        else:
+            model_path = raw_model_path
+        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM (dtype={model_cfg['dtype']}, quantization={model_cfg.get('quantization')})...")
 
         # Optimized vLLM configuration for T4 GPU with FP16
         self.llm = LLM(
             model=model_path,
-            dtype="float16",  # Optimal for T4 performance
-            gpu_memory_utilization=0.90,  # Use most of T4 memory efficiently
+            dtype=model_cfg["dtype"],
+            gpu_memory_utilization=model_cfg["gpu_memory_utilization"],
             max_model_len=4096,
-            enforce_eager=False,  # Enable CUDA graphs for better performance
-            max_num_seqs=32,  # Maximize batch size for throughput
+            enforce_eager=False,
+            max_num_seqs=32,
             trust_remote_code=True,
             tensor_parallel_size=1,
             disable_log_stats=True,
-            # Additional optimizations for T4
-            quantization=None,  # Using native FP16, no quantization
-            # Enable graph capture for better performance on repeated prompts
+            quantization=model_cfg.get("quantization"),
             enable_prefix_caching=True,
         )
 
