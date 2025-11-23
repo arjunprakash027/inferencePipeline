@@ -26,7 +26,7 @@ from pathlib import Path
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
 # Configuration
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
@@ -37,6 +37,7 @@ MODEL_CONFIGS = {
         "dtype": "half",  # FP16
         "quantization": "awq",
         "gpu_memory_utilization": 0.90,
+        "use_prequantized": False,
     },
     "Qwen/Qwen3-8B": {
         "dtype": "half",  # FP16
