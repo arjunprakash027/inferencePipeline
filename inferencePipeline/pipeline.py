@@ -19,7 +19,7 @@ from vllm import LLM, SamplingParams
 from pathlib import Path
 
 # Configuration
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B-Instruct")  # Switched to Qwen for better math reasoning
 CACHE_DIR = "/app/models"
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -75,93 +75,46 @@ class InferencePipeline:
         self.algebra_kb = self._load_knowledge_base("inferencePipeline/algebra_kb.txt")
         self.chinese_kb = self._load_knowledge_base("inferencePipeline/chinese_kb.txt")
 
-        # Sampling parameters optimized for each subject
+        # Sampling parameters optimized for Qwen3-4B and each subject
         self.params = {
             'algebra': SamplingParams(
-                temperature=0.1,  # Low temperature for deterministic accuracy
-                top_p=0.95,  # Good balance of creativity and focus
-                top_k=50,   # Limit to most likely tokens
-                max_tokens=800,  # Allow space for step-by-step reasoning
-                stop=["ANSWER:", "答案：", "答案:", "\n\nQuestion:", "\n\nProblem:"],
+                temperature=0.05,  # Very low temperature for deterministic accuracy
+                top_p=0.9,  # Focus on likely tokens
+                top_k=20,   # Narrower selection for consistency
+                max_tokens=1000,  # Allow space for step-by-step reasoning
+                stop=["Question:", "\n\nQuestion:"],  # Stop at next question, let extraction handle ANSWER
             ),
             'chinese': SamplingParams(
-                temperature=0.15,  # Slightly higher for natural language flow
+                temperature=0.1,  # Low for cultural accuracy
                 top_p=0.92,
-                top_k=40,
-                max_tokens=500,  # Appropriate for Chinese cultural questions
+                top_k=30,
+                max_tokens=600,  # Appropriate for Chinese cultural questions
                 stop=["答案：", "答案:", "END", "\n\n问题"],
             ),
             'geography': SamplingParams(
-                temperature=0.12,  # Low for factual accuracy
+                temperature=0.08,  # Low for factual accuracy
                 top_p=0.90,
-                top_k=45,
+                top_k=25,
                 max_tokens=400,
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
             'history': SamplingParams(
-                temperature=0.18,  # Slightly higher for narrative flow
+                temperature=0.12,  # Moderate for narrative flow
                 top_p=0.90,
-                top_k=50,
-                max_tokens=600,  # Allow for detailed historical context
+                top_k=35,
+                max_tokens=700,  # Allow for detailed historical context
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
             'default': SamplingParams(
-                temperature=0.2,  # Balanced for general questions
+                temperature=0.15,  # Balanced for general questions
                 top_p=0.9,
-                top_k=50,
-                max_tokens=450,
+                top_k=40,
+                max_tokens=500,
                 stop=["ANSWER:", "END", "\n\nQuestion:"],
             ),
         }
 
         print("✅ Pipeline initialized with knowledge bases and optimized parameters\n")
-
-    def _safe_eval(self, expression: str) -> float:
-        """
-        Safely evaluate a mathematical expression using AST parsing.
-        This prevents execution of arbitrary code while allowing basic math operations.
-        """
-        try:
-            # Parse the expression into an AST
-            tree = ast.parse(expression, mode='eval')
-
-            # Define allowed operations
-            ops = {
-                ast.Add: operator.add,
-                ast.Sub: operator.sub,
-                ast.Mult: operator.mul,
-                ast.Div: operator.truediv,
-                ast.Mod: operator.mod,
-                ast.Pow: operator.pow,
-                ast.USub: operator.neg,
-                ast.UAdd: operator.pos,
-            }
-
-            def _eval_node(node):
-                if isinstance(node, ast.Constant):  # Numbers
-                    return node.value
-                elif isinstance(node, ast.Num):  # For older Python versions
-                    return node.n
-                elif isinstance(node, ast.BinOp):  # Binary operations
-                    left = _eval_node(node.left)
-                    right = _eval_node(node.right)
-                    op = ops.get(type(node.op))
-                    if op is None:
-                        raise ValueError(f"Unsupported operation: {type(node.op)}")
-                    return op(left, right)
-                elif isinstance(node, ast.UnaryOp):  # Unary operations
-                    operand = _eval_node(node.operand)
-                    op = ops.get(type(node.op))
-                    if op is None:
-                        raise ValueError(f"Unsupported unary operation: {type(node.op)}")
-                    return op(operand)
-                else:
-                    raise ValueError(f"Unsupported node type: {type(node)}")
-
-            result = _eval_node(tree.body)
-            return float(result)
-        except Exception as e:
-            raise ValueError(f"Error evaluating expression '{expression}': {str(e)}")
 
     def _is_algebra_question(self, question: str) -> bool:
         """
@@ -196,43 +149,6 @@ class InferencePipeline:
         ])
 
         return has_numbers or has_math_ops or has_indicators or algebraic_pattern
-
-    def _solve_algebra_fast(self, question: str) -> str:
-        """
-        Try to solve algebraic questions using Python calculator for speed and accuracy.
-        """
-        try:
-            # Try to parse and extract a mathematical expression from the question
-            # This is a simple implementation - can be enhanced with more complex parsing
-
-            # Common patterns in algebra questions
-            import re
-
-            # Pattern 1: Simple equations like "2x + 3 = 7"
-            patterns = [
-                r'([0-9\+\-\*\/\(\)\. ]+)=([0-9\+\-\*\/\(\)\. ]+)',  # equation with equals
-                r'calculate\s+([0-9\+\-\*\/\(\)\. ]+)',  # calculate command
-                r'compute\s+([0-9\+\-\*\/\(\)\. ]+)',  # compute command
-                r'what\sis\s([0-9\+\-\*\/\(\)\. ]+)\?',  # what is expression
-            ]
-
-            for pattern in patterns:
-                match = re.search(pattern, question, re.IGNORECASE)
-                if match:
-                    expr = match.group(1).strip()
-                    # Clean up the expression
-                    expr = expr.replace(" ", "").replace("×", "*").replace("÷", "/")
-
-                    # Only evaluate if it's a pure mathematical expression
-                    if re.match(r'^[0-9\+\-\*\/\(\)\.]+$', expr):
-                        result = self._safe_eval(expr)
-                        return f"The answer is {result}"
-
-            # If we couldn't extract a simple expression, return None to fall back to LLM
-            return None
-        except:
-            # If safe eval fails, fall back to LLM
-            return None
 
     def _is_chinese_question(self, question: str) -> bool:
         """
@@ -275,22 +191,17 @@ class InferencePipeline:
         """Create optimized prompts with knowledge base integration"""
 
         if subject == "algebra":
-            # Use algebra knowledge base for better mathematical reasoning
+            # Enhanced algebra prompt with simple thinking approach
             kb_context = self.algebra_kb[:3000] if self.algebra_kb else ""
-            prompt = f"""You are an expert mathematician. Use the following algebra knowledge base to solve problems:
+            prompt = f"""You are an expert mathematician. Solve this algebra problem step by step.
 
 {kb_context}
 
-Solve this step-by-step following mathematical best practices:
-1. Identify knowns and unknowns in the problem
-2. Choose the appropriate formula or method
-3. Perform calculations carefully showing your work
-4. Verify your solution by plugging back into original equation if applicable
-5. State your final answer clearly with "ANSWER:"
+Question: {question}
 
-Problem: {question}
+Think through this step by step, and at the end put your final answer after "ANSWER:"
 
-Solution:"""
+Thinking:"""
 
         elif subject == "chinese":
             # Enhanced Chinese prompt with cultural context and structured approach
@@ -347,7 +258,16 @@ Response:"""
         # Look for answer markers
         answer = ""
         if "ANSWER:" in text:
-            answer = text.split("ANSWER:")[-1].strip()
+            # For algebra, extract everything after ANSWER:
+            answer_parts = text.split("ANSWER:")
+            if len(answer_parts) > 1:
+                answer = answer_parts[-1].strip()
+                # Get just the first line after ANSWER: to get the final answer
+                answer_lines = answer.split('\n')
+                if len(answer_lines) > 0:
+                    answer = answer_lines[0].strip()
+            else:
+                answer = text.split("ANSWER:")[-1].strip()
         elif "答案：" in text or "答案:" in text:
             # Handle Chinese answer markers
             match = re.search(r'(?:答案[：:])\s*(.*?)(?:\n|$)', text, re.DOTALL)
@@ -402,63 +322,38 @@ Response:"""
         if not questions:
             return []
 
-        # Process algebra questions first with fast calculator
-        results = [None] * len(questions)
-        remaining_questions = []
-
-        # First pass: handle algebra questions with calculator
+        # Group by subject for batched processing
+        subject_batches = {}
         for i, q in enumerate(questions):
-            if q.get('subject', 'default') == 'algebra':
-                print(f"Attempting to solve algebra question with fast calculator...")
-                fast_result = self._solve_algebra_fast(q['question'])
+            subject = q.get('subject', 'default')
+            if subject not in subject_batches:
+                subject_batches[subject] = []
+            subject_batches[subject].append((i, q))
 
-                if fast_result is not None:
-                    # Use fast calculator result for simple expressions
-                    results[i] = {
-                        "questionID": q["questionID"],
-                        "answer": fast_result
-                    }
-                    print(f"  ✅ Fast calculator success")
-                else:
-                    # Fall back to LLM for complex algebra
-                    print(f"  ⚠️  Fast calculator not applicable, using LLM")
-                    remaining_questions.append((i, q))
-            else:
-                # Non-algebra questions are added to remaining for batch processing
-                remaining_questions.append((i, q))
+        # Process each subject batch
+        results = [None] * len(questions)
 
-        # Second pass: process remaining questions (non-algebra + complex algebra) with batching
-        if remaining_questions:
-            # Group remaining questions by subject for batch processing
-            subject_batches = {}
-            for idx, q in remaining_questions:
-                subject = q.get('subject', 'default')
-                if subject not in subject_batches:
-                    subject_batches[subject] = []
-                subject_batches[subject].append((idx, q))
+        for subject, batch in subject_batches.items():
+            indices, qs = zip(*batch)
+            prompts = [self._create_prompt(q['question'], subject) for q in qs]
 
-            # Process each subject batch
-            for subject, batch in subject_batches.items():
-                indices, qs = zip(*batch)
-                prompts = [self._create_prompt(q['question'], subject) for q in qs]
+            print(f"Processing {len(prompts)} {subject} questions...")
 
-                print(f"Processing {len(prompts)} {subject} questions...")
+            # Get sampling params for this subject
+            params = self.params.get(subject, self.params['default'])
 
-                # Get sampling params for this subject
-                params = self.params.get(subject, self.params['default'])
+            # Generate
+            outputs = self.llm.generate(prompts, params, use_tqdm=False)
 
-                # Generate
-                outputs = self.llm.generate(prompts, params, use_tqdm=False)
+            # Extract answers
+            for idx, output, q in zip(indices, outputs, qs):
+                raw_answer = output.outputs[0].text.strip()
+                answer = self._extract_answer(raw_answer, subject)
 
-                # Extract answers
-                for idx, output, q in zip(indices, outputs, qs):
-                    raw_answer = output.outputs[0].text.strip()
-                    answer = self._extract_answer(raw_answer, subject)
-
-                    results[idx] = {
-                        "questionID": q["questionID"],
-                        "answer": answer
-                    }
+                results[idx] = {
+                    "questionID": q["questionID"],
+                    "answer": answer
+                }
 
         print(f"✅ Completed {len(results)} questions\n")
         return results
