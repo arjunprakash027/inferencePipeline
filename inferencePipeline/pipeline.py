@@ -24,7 +24,9 @@ from pathlib import Path
 
 # Configuration
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
+# Configuration
+# Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-8B")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
@@ -33,13 +35,18 @@ ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
 MODEL_CONFIGS = {
     "Qwen/Qwen3-4B": {
         "dtype": "half",  # FP16
-        "quantization": "awq",  # Enable custom AWQ quantization
+        "quantization": "awq",
         "gpu_memory_utilization": 0.90,
     },
     "Qwen/Qwen3-8B": {
         "dtype": "half",  # FP16
         "quantization": "awq",  # 4-bit quantization required for T4
         "gpu_memory_utilization": 0.88,
+    },
+    "meta-llama/Llama-3.2-3B-Instruct": {
+        "dtype": "half",  # FP16
+        "quantization": "awq",  # 4-bit quantization
+        "gpu_memory_utilization": 0.92,  # Higher for smaller 3B model
     },
     "meta-llama/Llama-3.1-8B-Instruct": {
         "dtype": "half",
@@ -78,7 +85,7 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
 RAW_MODEL_PATH = find_model_path(MODEL_NAME, CACHE_DIR)
 
 
-def quantize_model_awq(model_path: str, cache_dir: str) -> str:
+def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
     """
     Quantize model to AWQ 4-bit format (one-time operation during untimed setup)
     
@@ -87,8 +94,9 @@ def quantize_model_awq(model_path: str, cache_dir: str) -> str:
     from awq import AutoAWQForCausalLM
     from transformers import AutoTokenizer
     
-    # Define quantized model path
-    quant_path = os.path.join(cache_dir, "qwen-awq")
+    # Define quantized model path dynamically
+    safe_name = model_name.split("/")[-1].lower().replace("-", "_")
+    quant_path = os.path.join(cache_dir, f"{safe_name}_awq")
     
     # Check if already quantized
     if os.path.exists(quant_path) and os.path.exists(os.path.join(quant_path, "config.json")):
@@ -159,14 +167,11 @@ def quantize_model_awq(model_path: str, cache_dir: str) -> str:
     print(f"📊 Using {len(calibration_data)} calibration samples")
     
     # Quantize the model
-    # We keep the 'lm_head' in FP16 to preserve the quality of the final token generation
-    # This is a high-value optimization since we have plenty of VRAM (16GB) for this small model
     print("⚙️  Quantizing model (this may take 5-10 minutes)...")
     model.quantize(
         tokenizer, 
         quant_config=quant_config, 
-        calib_data=calibration_data,
-        modules_to_not_convert=["lm_head"]
+        calib_data=calibration_data
     )
     
     # Save quantized model
@@ -223,10 +228,10 @@ class InferencePipeline:
         # Note: The user's new code assumes 8B AWQ is pre-quantized or handled differently.
         # We will keep the existing AWQ logic for 4B if selected, but adapt for the new config structure.
         
-        if MODEL_NAME == "Qwen/Qwen3-4B" and model_config['quantization'] == 'awq':
-             # Legacy path for 4B AWQ
-             print("🚀 Preparing AWQ quantized model for vLLM...")
-             awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR)
+        # Determine if we need to quantize first (for AWQ models)
+        if model_config['quantization'] == 'awq':
+             print(f"🚀 Preparing AWQ quantized model for {MODEL_NAME}...")
+             awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR, MODEL_NAME)
              model_path = awq_model_path
         else:
              model_path = RAW_MODEL_PATH
