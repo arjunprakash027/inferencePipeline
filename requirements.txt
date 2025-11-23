@@ -3,3 +3,4 @@ torch
 vllm
 bitsandbytes
 accelerate
+autoawq

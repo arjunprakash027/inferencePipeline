@@ -55,6 +55,78 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
 RAW_MODEL_PATH = find_model_path(MODEL_NAME, CACHE_DIR)
 
 
+def quantize_model_awq(model_path: str, cache_dir: str) -> str:
+    """
+    Quantize model to AWQ 4-bit format (one-time operation during untimed setup)
+    
+    Returns path to quantized model (either newly created or existing cached version)
+    """
+    from awq import AutoAWQForCausalLM
+    from transformers import AutoTokenizer
+    
+    # Define quantized model path
+    quant_path = os.path.join(cache_dir, "qwen-awq")
+    
+    # Check if already quantized
+    if os.path.exists(quant_path) and os.path.exists(os.path.join(quant_path, "config.json")):
+        print(f"✅ AWQ quantized model found at {quant_path}")
+        return quant_path
+    
+    print(f"🔧 AWQ model not found. Starting quantization (one-time setup)...")
+    print(f"   Source: {model_path}")
+    print(f"   Target: {quant_path}")
+    
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    
+    # Load model for quantization
+    model = AutoAWQForCausalLM.from_pretrained(
+        model_path,
+        device_map="auto",
+        safetensors=True
+    )
+    
+    # AWQ quantization config (4-bit, group size 128)
+    quant_config = {
+        "zero_point": True,
+        "q_group_size": 128,
+        "w_bit": 4,
+        "version": "GEMM"
+    }
+    
+    # Simple calibration dataset (generic text samples)
+    # Using hardcoded samples for speed - AWQ is robust to calibration data
+    calibration_data = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Machine learning is a subset of artificial intelligence.",
+        "Python is a high-level programming language.",
+        "The capital of France is Paris.",
+        "Mathematics is the study of numbers, quantities, and shapes.",
+        "Climate change is a global environmental challenge.",
+        "The human brain contains billions of neurons.",
+        "Renewable energy sources include solar and wind power.",
+        "DNA carries genetic information in living organisms.",
+        "The speed of light is approximately 299,792 kilometers per second.",
+    ] * 51  # Repeat to get ~510 samples (AWQ works well with 512+)
+    
+    print(f"📊 Using {len(calibration_data)} calibration samples")
+    
+    # Quantize the model
+    print("⚙️  Quantizing model (this may take 5-10 minutes)...")
+    model.quantize(tokenizer, quant_config=quant_config, calib_data=calibration_data)
+    
+    # Save quantized model
+    print(f"💾 Saving quantized model to {quant_path}...")
+    os.makedirs(quant_path, exist_ok=True)
+    model.save_quantized(quant_path, safetensors=True, shard_size="4GB")
+    tokenizer.save_pretrained(quant_path)
+    
+    print(f"✅ AWQ quantization complete! Model saved to {quant_path}")
+    
+    return quant_path
+
+
+
 class InferencePipeline:
     """
     Runtime-quantized inference pipeline for T4 GPU
@@ -68,16 +140,21 @@ class InferencePipeline:
 
     def __init__(self):
         """
-        Initialize pipeline with vLLM (FP16)
-        Simplified: no quantization needed for 4B model on T4
+        Initialize pipeline with AWQ-quantized vLLM (4-bit)
+        AWQ quantization happens during untimed setup for memory efficiency
         """
 
-        # Optimized configuration for T4 16GB GPU (Log 3 working config)
-        print("🚀 Loading Qwen 4B model with vLLM (T4 optimized)...")
+        # Quantize model to AWQ 4-bit (one-time operation, cached afterwards)
+        print("🚀 Preparing AWQ quantized model for vLLM...")
+        awq_model_path = quantize_model_awq(RAW_MODEL_PATH, CACHE_DIR)
+
+        # Load AWQ model with vLLM (Log 3 working config + AWQ)
+        print("🚀 Loading AWQ model with vLLM (T4 optimized)...")
 
         self.llm = LLM(
-            model=RAW_MODEL_PATH,             # Load directly from HF cache
-            dtype="half",                     # FP16 for compute
+            model=awq_model_path,             # Load AWQ quantized model
+            quantization="awq",               # Enable AWQ support in vLLM
+            dtype="half",                     # FP16 for non-quantized parts
             gpu_memory_utilization=0.90,      # Higher utilization for reasoning tasks
             max_model_len=2048,               # Longer context for reasoning support
             enforce_eager=False,              # Enable CUDA graphs for speed
