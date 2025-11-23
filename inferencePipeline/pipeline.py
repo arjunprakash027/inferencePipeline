@@ -1,22 +1,24 @@
 """
 Tech Arena 2025 - Phase 2
-High Accuracy LLM Inference Pipeline
+Optimized Multi-Model Inference Pipeline with On-the-Fly Quantization
 
 Strategy:
-- Use Llama-3.1-8B for maximum accuracy across all subjects
-- Enhanced prompts with detailed examples and context
-- Low temperature for deterministic responses
-- Specialized handling for algebra and Chinese
+- Subject-specific model routing for optimal accuracy
+- On-the-fly 4-bit quantization using bitsandbytes
+- Qwen3-4B for Algebra & Chinese (strong math & Chinese capabilities)
+- Llama-3.2-3B for Geography & History (faster for factual queries)
+- Optimized prompts per subject
+- Batch processing for efficiency
 """
 
 import os
 import re
+import torch
 from typing import List, Dict
-from vllm import LLM, SamplingParams
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from pathlib import Path
 
-# Configuration - Using Llama-3.1-8B for maximum accuracy
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+
 CACHE_DIR = "/app/models"
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -40,239 +42,228 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
     return str(snapshot)
 
 
-class InferencePipeline:
-    """High accuracy inference pipeline"""
+class SubjectRouter:
+    """Routes questions to the appropriate model based on subject"""
 
     def __init__(self):
-        """Initialize pipeline with vLLM for maximum accuracy"""
+        """Initialize models with on-the-fly 4-bit quantization"""
+        print("🚀 Initializing Multi-Model Pipeline with On-the-Fly Quantization...")
 
-        model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM for maximum accuracy...")
+        # Configure 4-bit quantization with bitsandbytes
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,  # Double quantization for better compression
+            bnb_4bit_quant_type="nf4"  # NormalFloat4 - optimal for inference
+        )
 
-        # Configure vLLM with accuracy-focused settings for Tesla T4
-        self.llm = LLM(
-            model=model_path,
-            dtype="float16",  # Use FP16 for T4 GPU
-            gpu_memory_utilization=0.85,  # Leave some headroom for stability
-            max_model_len=4096,
-            enforce_eager=True,  # More stable on T4 with larger model
-            max_num_seqs=16,  # Reduced batch size for 8B model
+        # Model 1: Qwen3-1.7B for Algebra & Chinese
+        print("📦 Loading Qwen3-1.7B (4-bit) for Algebra & Chinese...")
+        qwen_path = find_model_path("Qwen/Qwen3-1.7B", CACHE_DIR)
+        self.qwen_tokenizer = AutoTokenizer.from_pretrained(
+            qwen_path,
+            trust_remote_code=True
+        )
+        self.qwen_model = AutoModelForCausalLM.from_pretrained(
+            qwen_path,
+            quantization_config=quantization_config,
+            device_map="auto",
             trust_remote_code=True,
-            tensor_parallel_size=1,
-            disable_log_stats=True,
-            seed=42  # For reproducible results
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True
         )
+        self.qwen_model.eval()
+        print(f"✅ Qwen3-1.7B loaded (VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB)")
 
-        self.tokenizer = self.llm.get_tokenizer()
-
-        # Low temperature sampling parameters for maximum accuracy
-        self.sampling_params = SamplingParams(
-            temperature=0.05,  # Very low temperature for consistent, accurate answers
-            top_p=0.95,
-            top_k=-1,  # Use probability distribution instead of top-k
-            max_tokens=800,  # Allow more tokens for complex answers
-            stop=["</s>", "<|eot_id|>", "\n\nQuestion:", "\n\nProblem:", "\n\n问题"],
-            presence_penalty=0.1,
-            frequency_penalty=0.1
+        # Model 2: Llama-3.2-3B for Geography & History
+        print("📦 Loading Llama-3.2-3B (4-bit) for Geography & History...")
+        llama_path = find_model_path("meta-llama/Llama-3.2-3B-Instruct", CACHE_DIR)
+        self.llama_tokenizer = AutoTokenizer.from_pretrained(llama_path)
+        self.llama_model = AutoModelForCausalLM.from_pretrained(
+            llama_path,
+            quantization_config=quantization_config,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True
         )
+        self.llama_model.eval()
+        print(f"✅ Llama-3.2-3B loaded (Total VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB)")
 
-        print("✅ High accuracy pipeline ready\n")
+        print("✅ Multi-Model Pipeline Ready!\n")
 
-    def _create_prompt(self, question: str, subject: str) -> str:
-        """Create highly effective prompts with examples and context for maximum accuracy"""
+    def _create_algebra_prompt(self, question: str) -> str:
+        """Simple prompt for algebra"""
+        return f"""Solve this math problem step by step and provide the final answer.
 
-        if subject == "algebra":
-            # Highly structured algebra prompt with examples
-            prompt = f"""You are an expert mathematician. Solve the following algebra problem step by step with detailed reasoning.
+{question}"""
 
-INSTRUCTIONS:
-1. Show your step-by-step work
-2. Use proper algebraic methods
-3. Box or clearly state the final answer
-4. Be precise and accurate
+    def _create_chinese_prompt(self, question: str) -> str:
+        """Simple prompt for Chinese"""
+        return f"""Answer this question about Chinese language or culture accurately.
 
-EXAMPLES:
-Example 1: If 2x + 3 = 7, then 2x = 4, so x = 2.
-Example 2: If 3(x - 2) = 9, then x - 2 = 3, so x = 5.
+{question}"""
 
-QUESTION:
-{question}
+    def _create_geography_prompt(self, question: str) -> str:
+        """Simple prompt for geography"""
+        return f"""Answer this geography question accurately.
 
-STEP-BY-STEP SOLUTION:
-"""
+{question}"""
 
-        elif subject == "chinese":
-            # Expert Chinese language and culture prompt
-            prompt = f"""You are an expert in Chinese language, culture, and history. Provide accurate information about Chinese topics.
+    def _create_history_prompt(self, question: str) -> str:
+        """Simple prompt for history"""
+        return f"""Answer this history question accurately.
 
-INSTRUCTIONS:
-1. Use proper Chinese characters when appropriate
-2. Provide culturally accurate information
-3. Give clear, factual answers
-4. Respect Chinese linguistic and cultural nuances
+{question}"""
 
-QUESTION:
-{question}
-
-ANSWER:
-"""
-
-        elif subject == "geography":
-            # Factual geography prompt
-            prompt = f"""You are an expert geographer. Provide accurate geographical information based on current data.
-
-INSTRUCTIONS:
-1. Provide factual information
-2. Use proper country, city, and location names
-3. Base answers on current geographical data
-4. Be precise and accurate
-
-QUESTION:
-{question}
-
-ANSWER:
-"""
-
-        elif subject == "history":
-            # Factual history prompt
-            prompt = f"""You are an expert historian. Provide accurate historical information based on documented facts.
-
-INSTRUCTIONS:
-1. Provide factually accurate information
-2. Use proper dates, names, and historical context
-3. Base answers on documented historical records
-4. Be precise and avoid speculation
-
-QUESTION:
-{question}
-
-ANSWER:
-"""
-
-        else:
-            # Default prompt for any other subject
-            prompt = f"""Answer the following question accurately and completely.
-
-INSTRUCTIONS:
-1. Provide accurate information
-2. Be thorough but concise
-3. Base answers on facts, not assumptions
-4. Be precise
-
-QUESTION:
-{question}
-
-ANSWER:
-"""
-
-        # Format with chat template
+    def _format_qwen_prompt(self, content: str) -> str:
+        """Format prompt for Qwen model"""
         messages = [
-            {"role": "system", "content": "You are a highly accurate expert assistant. Provide precise, factual answers."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": content}
         ]
-        
-        return self.tokenizer.apply_chat_template(
+        return self.qwen_tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
 
-    def _extract_answer(self, text: str, subject: str) -> str:
-        """Extract clean, accurate answer from model response"""
+    def _format_llama_prompt(self, content: str) -> str:
+        """Format prompt for Llama model"""
+        messages = [
+            {"role": "user", "content": content}
+        ]
+        return self.llama_tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
 
-        # Remove common tokenization artifacts and special tags
-        text = re.sub(r'<s>|</s>|<\|.*?\|>', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'(?i)</?think>', '', text)
+    def _generate_response(self, model, tokenizer, prompt: str, max_new_tokens: int = 512) -> str:
+        """Generate response from model"""
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+        with torch.inference_mode():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=0.1,  # Low temperature for accuracy
+                top_p=0.9,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id,
+                repetition_penalty=1.1
+            )
+
+        # Decode only the generated part
+        generated_ids = outputs[0][inputs['input_ids'].shape[1]:]
+        response = tokenizer.decode(generated_ids, skip_special_tokens=True)
+        return response.strip()
+
+    def _clean_answer(self, text: str) -> str:
+        """Clean and extract final answer"""
+        # Remove common artifacts
+        text = re.sub(r'<\|.*?\|>|</?think>|<s>|</s>', '', text, flags=re.IGNORECASE)
         text = text.strip()
 
-        # Look for specific markers to extract the final answer
-        if "ANSWER:" in text:
-            # Extract everything after the last ANSWER: marker
-            answer = text.split("ANSWER:")[-1].strip()
-        elif "答案：" in text:
-            # Chinese answer marker
-            answer = text.split("答案：")[-1].strip()
-        elif "答案:" in text:
-            # Alternative Chinese answer marker
-            answer = text.split("答案:")[-1].strip()
-        elif "\n\n" in text and "STEP-BY-STEP SOLUTION:" in text:
-            # For algebra, take the final part after step-by-step working
-            parts = text.split("STEP-BY-STEP SOLUTION:")
-            if len(parts) > 1:
-                working = parts[1]
-                # Look for the final answer in the working
-                lines = working.split('\n')
-                # Look for the last line that looks like an answer
-                potential_answers = []
-                for line in reversed(lines):
-                    line = line.strip()
-                    if line and (line.startswith("So ") or line.startswith("Therefore") or line.startswith("The answer") or line.startswith("Thus") or "=" in line or "x =" in line or "x=" in line):
-                        potential_answers.append(line)
-                        break
-                if potential_answers:
-                    answer = potential_answers[0]
-                else:
-                    answer = working
-            else:
-                answer = text
-        else:
-            # Fallback: extract the most relevant last part of the response
-            # Split by common separators and take the last meaningful segment
-            segments = re.split(r'\n\s*\n|QUESTION:|PROBLEM:', text)
-            answer = segments[-1].strip()
-        
-        # Clean up the answer
-        answer = answer.strip()
-        # Remove any remaining prefixes that might be part of the model's output
-        if answer.lower().startswith("answer:"):
-            answer = answer[7:].strip()
-        elif answer.lower().startswith("response:"):
-            answer = answer[9:].strip()
-        elif answer.lower().startswith("solution:"):
-            answer = answer[9:].strip()
-        
-        # Ensure proper formatting and length
-        answer = answer.strip()
-        if len(answer) > 5000:
-            answer = answer[:5000]
-        
-        return answer
+        # Extract answer after markers
+        markers = ["Answer:", "答案:", "答案：", "Final Answer:", "Solution:", "Therefore,", "Thus,"]
+        for marker in markers:
+            if marker in text:
+                text = text.split(marker)[-1].strip()
+                break
+
+        # Limit to 5000 characters
+        if len(text) > 5000:
+            text = text[:5000]
+
+        return text.strip()
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Main inference method with accuracy-focused processing"""
-
+        """Process questions with subject-specific routing"""
         if not questions:
             return []
 
-        print(f"Processing {len(questions)} questions with high accuracy focus...")
-
-        # Create all prompts
-        prompts = []
-        for q in questions:
-            prompt = self._create_prompt(q['question'], q.get('subject', 'default'))
-            prompts.append(prompt)
-
-        # Generate all responses at once for efficiency
-        outputs = self.llm.generate(prompts, self.sampling_params, use_tqdm=False)
-
-        # Extract answers
+        print(f"🔄 Processing {len(questions)} questions with subject-specific routing...")
         results = []
-        for i, (output, q) in enumerate(zip(outputs, questions)):
-            raw_answer = output.outputs[0].text.strip()
-            clean_answer = self._extract_answer(raw_answer, q.get('subject', 'default'))
-            
-            results.append({
-                "questionID": q["questionID"],
-                "answer": clean_answer
-            })
-            
-            if (i + 1) % 10 == 0:  # Progress indicator
-                print(f"Processed {i + 1}/{len(questions)} questions...")
 
-        print(f"✅ Completed {len(results)} questions with high accuracy focus\n")
+        for i, q in enumerate(questions):
+            question_text = q['question']
+            subject = q.get('subject', 'default').lower()
+            question_id = q['questionID']
+
+            try:
+                # Route to appropriate model based on subject
+                if subject == "algebra":
+                    prompt_content = self._create_algebra_prompt(question_text)
+                    formatted_prompt = self._format_qwen_prompt(prompt_content)
+                    response = self._generate_response(
+                        self.qwen_model,
+                        self.qwen_tokenizer,
+                        formatted_prompt,
+                        max_new_tokens=600  # More tokens for step-by-step math
+                    )
+
+                elif subject == "chinese":
+                    prompt_content = self._create_chinese_prompt(question_text)
+                    formatted_prompt = self._format_qwen_prompt(prompt_content)
+                    response = self._generate_response(
+                        self.qwen_model,
+                        self.qwen_tokenizer,
+                        formatted_prompt,
+                        max_new_tokens=512
+                    )
+
+                elif subject == "geography":
+                    prompt_content = self._create_geography_prompt(question_text)
+                    formatted_prompt = self._format_llama_prompt(prompt_content)
+                    response = self._generate_response(
+                        self.llama_model,
+                        self.llama_tokenizer,
+                        formatted_prompt,
+                        max_new_tokens=400
+                    )
+
+                elif subject == "history":
+                    prompt_content = self._create_history_prompt(question_text)
+                    formatted_prompt = self._format_llama_prompt(prompt_content)
+                    response = self._generate_response(
+                        self.llama_model,
+                        self.llama_tokenizer,
+                        formatted_prompt,
+                        max_new_tokens=400
+                    )
+
+                else:
+                    # Default to Qwen for unknown subjects
+                    prompt_content = f"Answer this question accurately:\n\n{question_text}\n\nAnswer:"
+                    formatted_prompt = self._format_qwen_prompt(prompt_content)
+                    response = self._generate_response(
+                        self.qwen_model,
+                        self.qwen_tokenizer,
+                        formatted_prompt
+                    )
+
+                # Clean and format answer
+                clean_answer = self._clean_answer(response)
+                results.append({
+                    "questionID": question_id,
+                    "answer": clean_answer
+                })
+
+                if (i + 1) % 10 == 0:
+                    print(f"✅ Processed {i + 1}/{len(questions)} questions...")
+
+            except Exception as e:
+                print(f"⚠️ Error processing question {question_id}: {e}")
+                # Fallback: return a generic answer
+                results.append({
+                    "questionID": question_id,
+                    "answer": "Unable to process this question."
+                })
+
+        print(f"✅ Completed all {len(results)} questions!\n")
         return results
 
 
 def loadPipeline():
-    """Entry point for evaluation system - returns high accuracy pipeline"""
-    return InferencePipeline()
+    """Entry point for evaluation system"""
+    return SubjectRouter()
