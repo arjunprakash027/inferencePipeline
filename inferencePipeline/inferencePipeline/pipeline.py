@@ -3,14 +3,16 @@ Tech Arena 2025 - Phase 2
 Efficient LLM Inference Pipeline with vLLM
 
 OPTIMIZATIONS:
-✅ vLLM for fast inference with Qwen 4B
-✅ FP16 precision for T4 GPU (16GB)
+✅ vLLM for fast inference with Qwen 8B (4-bit AWQ quantization)
+✅ Larger model (8B) for better reasoning while maintaining speed
+✅ Native Chinese support + strong math capabilities
 ✅ Memory-optimized batch processing for T4 constraints
 ✅ Batched processing by subject
 ✅ Chain-of-Thought (CoT) prompting for Algebra (8 examples)
 ✅ Self-Consistency for Algebra (n=5 diverse solutions, majority vote)
-✅ Cache-Augmented Generation (CAG) for Chinese questions
+✅ Cache-Augmented Generation (CAG) for Chinese + Algebra
 ✅ Comprehensive Chinese knowledge base (32KB, 1055 lines)
+✅ Comprehensive Algebra knowledge base (12KB, 415 lines)
 ✅ Answer extraction (returns only final answers, not reasoning)
 ✅ CPU swap space for memory overflow handling
 """
@@ -24,8 +26,8 @@ from pathlib import Path
 
 
 # Configuration
-# Model options: "Qwen/Qwen3-4B" (recommended) or "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
+# Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-8B")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "chinese_knowledge_base.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "algebra_knowledge_base.txt")
@@ -36,6 +38,11 @@ MODEL_CONFIGS = {
         "dtype": "half",  # FP16
         "quantization": None,
         "gpu_memory_utilization": 0.90,
+    },
+    "Qwen/Qwen3-8B": {
+        "dtype": "half",  # FP16
+        "quantization": "awq",  # 4-bit quantization required for T4
+        "gpu_memory_utilization": 0.88,
     },
     "meta-llama/Llama-3.1-8B-Instruct": {
         "dtype": "half",
