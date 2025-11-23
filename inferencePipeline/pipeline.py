@@ -495,67 +495,80 @@ Answer:"""
         )
 
     def _extract_final_answer(self, text: str, subject: str) -> str:
-        """Extract only the final answer from reasoning output"""
+        """Extract only the final answer from reasoning output - CONCISE answers only"""
 
         if subject == 'algebra':
-            # Strip any reasoning/thinking prefixes
-            # Remove lines starting with "Okay", "So", "Let me", etc.
-            reasoning_prefixes = [
-                r'^(?:Okay|So|Let me|First|Now|Here|The user|To solve|We need).*?\n',
-                r'^(?:I need to|I will|Let\'s|Step \d+).*?\n',
-            ]
-            for prefix in reasoning_prefixes:
-                text = re.sub(prefix, '', text, flags=re.IGNORECASE | re.MULTILINE)
-
-            # Aggressive extraction - prioritize "Answer:" pattern
-            answer_patterns = [
-                r'Answer:\s*(.+?)(?:\n\n|\n(?=Problem)|$)',  # Most specific
-                r'(?:Final [Aa]nswer|ANSWER):\s*(.+?)(?:\n|$)',
-                r'(?:Therefore|Thus|So),?\s*(.+?)(?:\n|$)',
-                r'=\s*([^=\n]+)$',  # Last equation
+            # Look for Final Answer marker first (most reliable)
+            final_answer_patterns = [
+                r'Final Answer:\s*(.+?)(?:\n|$)',
+                r'(?:ANSWER|Answer):\s*(.+?)(?:\n|$)',
+                r'(?:The answer is|The solution is)\s*(.+?)(?:\n|$)',
             ]
 
-            for pattern in answer_patterns:
-                match = re.search(pattern, text, re.MULTILINE | re.DOTALL)
+            for pattern in final_answer_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
                 if match:
                     answer = match.group(1).strip()
-                    # Clean up artifacts
+                    # Clean up
                     answer = answer.rstrip('.').strip()
-                    # Remove any trailing explanations
-                    answer = answer.split('\n')[0]
+                    # Remove trailing explanations after first sentence/line
+                    answer = answer.split('\n')[0].split('.')[0]
                     return answer
 
-            # Fallback: return last non-empty line that looks like an answer
+            # If no explicit marker, look for the last equation or mathematical statement
             lines = [line.strip() for line in text.split('\n') if line.strip()]
-            for line in reversed(lines):
-                # Skip lines that look like reasoning
-                if not any(line.lower().startswith(word) for word in ['so', 'therefore', 'thus', 'let', 'we', 'the']):
-                    return line
 
+            # Find lines with math content (=, variables, numbers)
+            math_lines = []
+            for line in lines:
+                if any(char in line for char in ['=', 'x', 'y', 'z']) or any(char.isdigit() for char in line):
+                    # Skip reasoning lines
+                    if not any(line.lower().startswith(word) for word in ['step', 'first', 'then', 'so', 'therefore', 'we', 'let', 'using', 'substitute']):
+                        math_lines.append(line)
+
+            if math_lines:
+                # Return the last mathematical line
+                return math_lines[-1].rstrip('.')
+
+            # Absolute fallback
             if lines:
-                return lines[-1]
+                return lines[-1].rstrip('.')
 
         elif subject == 'chinese':
-            # Chinese-specific extraction
-            answer_patterns = [
-                r'(?:答案|最终答案)[:：]\s*(.+?)(?:\n\n|\n|$)',
-                r'(?:Answer|answer):\s*(.+?)(?:\n\n|\n|$)',
-                r'(?:结论|因此)[:：,，]\s*(.+?)(?:\n\n|\n|$)',
-            ]
+            # Remove any "Answer:" prefix in English
+            text = re.sub(r'^(?:Answer|答案)[:：]\s*', '', text, flags=re.IGNORECASE)
 
-            for pattern in answer_patterns:
-                match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-                if match:
-                    answer = match.group(1).strip()
-                    answer = re.sub(r'\n+', ' ', answer)
-                    return answer
+            # Chinese-specific extraction - get first complete sentence
+            # Split by Chinese punctuation
+            sentences = re.split(r'[。！？\n]', text)
+            non_empty = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
 
+            if non_empty:
+                # Return first substantial sentence
+                return non_empty[0]
+
+            # Fallback: return first line
             lines = [line.strip() for line in text.split('\n') if line.strip()]
             if lines:
-                return lines[-1]
+                return lines[0]
 
-        # For other subjects or if extraction fails, return the full text
-        return text
+        else:
+            # For geography/history: extract concise factual answer
+            # Remove "Answer:" prefix
+            text = re.sub(r'^Answer:\s*', '', text, flags=re.IGNORECASE)
+
+            # Get first sentence or first line
+            sentences = re.split(r'[.!?]\s+', text)
+            if sentences and len(sentences[0]) > 10:
+                return sentences[0].strip() + '.'
+
+            # Fallback to first line
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            if lines:
+                return lines[0]
+
+        # Ultimate fallback
+        return text.strip()
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """
