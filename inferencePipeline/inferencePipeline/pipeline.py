@@ -9,7 +9,8 @@ OPTIMIZATIONS:
 ✅ Batched processing by subject
 ✅ Few-shot prompting for Chinese and Algebra
 ✅ Answer extraction (returns only final answers, not reasoning)
-✅ Prefix caching for few-shot examples
+✅ Cache-Augmented Generation (CAG) for Chinese questions
+✅ Comprehensive Chinese knowledge base (50,000+ chars)
 ✅ CPU swap space for memory overflow handling
 """
 
@@ -24,6 +25,7 @@ from pathlib import Path
 # Configuration
 MODEL_NAME = "Qwen/Qwen3-4B"
 CACHE_DIR = "/app/models"
+CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "..", "chinese_knowledge_base.txt")
 
 
 def find_model_path(model_name: str, cache_dir: str) -> str:
@@ -72,6 +74,9 @@ class InferencePipeline:
         Simplified: no quantization needed for 4B model on T4
         """
 
+        # Load Chinese knowledge base for CAG
+        self.chinese_kb = self._load_chinese_knowledge_base()
+
         # Optimized configuration for T4 16GB GPU (speed + stability)
         print("🚀 Loading Qwen 4B model with vLLM (FP16)...")
 
@@ -119,6 +124,74 @@ class InferencePipeline:
 
         print("✅ Pipeline ready for inference\n")
 
+    def _load_chinese_knowledge_base(self) -> str:
+        """Load Chinese knowledge base for cache-augmented generation"""
+        try:
+            kb_path = Path(CHINESE_KB_PATH)
+            if kb_path.exists():
+                with open(kb_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                print(f"📚 Loaded Chinese knowledge base ({len(content)} chars)")
+                return content
+            else:
+                print("⚠️  Chinese knowledge base not found, using default prompts")
+                return ""
+        except Exception as e:
+            print(f"⚠️  Error loading Chinese KB: {e}")
+            return ""
+
+    def _get_relevant_chinese_context(self, question: str) -> str:
+        """Extract relevant context from knowledge base based on question keywords"""
+        if not self.chinese_kb:
+            return ""
+
+        question_lower = question.lower()
+
+        # Extract potential keywords (simplified approach)
+        keyword_mapping = {
+            '朝代': ['朝代', 'Dynasty', 'Dynasties'],
+            '节日': ['节日', 'Festival', 'Festivals'],
+            '哲学': ['哲学', '儒家', '道家', '佛教', 'Confucianism', 'Taoism', 'Buddhism'],
+            '文学': ['文学', '诗', '词', '小说', 'Literature', 'Poetry', 'Novel'],
+            '发明': ['发明', 'Invention', '造纸', '印刷', '指南针', '火药'],
+            '艺术': ['艺术', '书法', '国画', 'Art', 'Calligraphy', 'Painting'],
+            '饮食': ['饮食', '菜', '茶', 'Cuisine', 'Food', 'Tea'],
+            '建筑': ['建筑', '故宫', '长城', 'Architecture', 'Forbidden City', 'Great Wall'],
+            '戏曲': ['戏曲', '京剧', 'Opera'],
+            '医学': ['医学', '中医', 'Medicine', 'TCM'],
+            '武术': ['武术', 'Martial Arts', 'Kung Fu'],
+            '汉字': ['汉字', '拼音', 'Characters', 'Pinyin'],
+            '成语': ['成语', 'Idiom'],
+            '地理': ['山', '河', '省', 'Mountain', 'River', 'Province'],
+        }
+
+        # Find matching sections
+        relevant_sections = []
+        for category, search_terms in keyword_mapping.items():
+            if any(term in question or term in question_lower for term in search_terms):
+                # Extract section from knowledge base
+                for section_marker in [f"=== {category}", f"/ {category} "]:
+                    if section_marker in self.chinese_kb:
+                        start_idx = self.chinese_kb.find(section_marker)
+                        if start_idx != -1:
+                            # Find next section
+                            next_section_idx = self.chinese_kb.find("\n===", start_idx + 10)
+                            if next_section_idx == -1:
+                                section_content = self.chinese_kb[start_idx:start_idx+2000]
+                            else:
+                                section_content = self.chinese_kb[start_idx:next_section_idx]
+                            relevant_sections.append(section_content.strip())
+                            break
+
+        if relevant_sections:
+            # Combine and limit to reasonable length
+            context = "\n\n".join(relevant_sections[:2])  # Max 2 sections
+            if len(context) > 1500:
+                context = context[:1500] + "..."
+            return context
+
+        return ""
+
     def _strip_thinking(self, text: str) -> str:
         """Remove <think> tags and their content from the output"""
         import re
@@ -154,8 +227,23 @@ class InferencePipeline:
         """Create prompt using Qwen chat template with few-shot examples"""
 
         if subject == "chinese":
-            # Streamlined Chinese prompt - faster, more direct
-            prompt = f"""直接回答以下中文问题。
+            # Cache-Augmented Generation for Chinese questions
+            context = self._get_relevant_chinese_context(question)
+
+            if context:
+                # Use knowledge base context
+                prompt = f"""你是中国文化和语言专家。使用以下参考资料回答问题。
+
+参考资料：
+{context}
+
+基于以上参考资料，直接回答以下问题：
+
+问题: {question}
+答案:"""
+            else:
+                # Fallback to simple prompt
+                prompt = f"""你是中国文化和语言专家。直接回答以下中文问题。
 
 问题: {question}
 答案:"""
