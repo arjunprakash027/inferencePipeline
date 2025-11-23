@@ -1,6 +1,6 @@
 """
 Tech Arena 2025 - Phase 2
-Optimized Inference Pipeline
+High-Accuracy Pipeline with Llama-3.1-8B
 """
 
 import torch
@@ -21,23 +21,20 @@ def find_model_path(model_name: str, cache_dir: str) -> str:
         raise FileNotFoundError(f"Model not found: {model_cache}")
 
     snapshots_dir = model_cache / "snapshots"
-    if not snapshots_dir.exists():
-        raise FileNotFoundError(f"No snapshots: {snapshots_dir}")
-
     snapshots = list(snapshots_dir.iterdir())
     if not snapshots:
-        raise FileNotFoundError(f"No snapshots in {snapshots_dir}")
+        raise FileNotFoundError(f"No snapshots")
 
     return str(sorted(snapshots, key=lambda p: p.stat().st_mtime, reverse=True)[0])
 
 
-class InferencePipeline:
-    """Fast and accurate inference pipeline"""
+class HighAccuracyPipeline:
+    """Maximum accuracy with Llama-3.1-8B"""
 
     def __init__(self):
-        print("🚀 Loading Llama-3.2-3B with 4-bit quantization...")
+        print("🚀 Loading Llama-3.1-8B with 4-bit quantization...")
 
-        # 4-bit NF4 quantization
+        # Aggressive 4-bit quantization for 8B model
         quant_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.float16,
@@ -45,11 +42,12 @@ class InferencePipeline:
             bnb_4bit_quant_type="nf4"
         )
 
-        # Load model with on-the-fly quantization
-        model_path = find_model_path("meta-llama/Llama-3.2-3B-Instruct", CACHE_DIR)
+        # Load Llama-3.1-8B with on-the-fly quantization
+        model_path = find_model_path("meta-llama/Llama-3.1-8B-Instruct", CACHE_DIR)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.tokenizer.padding_side = "left"  # Fix for decoder-only models
+        self.tokenizer.padding_side = "left"
+
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,
             quantization_config=quant_config,
@@ -61,21 +59,57 @@ class InferencePipeline:
 
         print(f"✅ Ready! VRAM: {torch.cuda.memory_allocated()/1024**3:.2f}GB\n")
 
+    def _create_prompt(self, question: str, subject: str) -> str:
+        """Create subject-optimized prompts"""
+
+        if subject == "algebra":
+            content = f"""Solve this algebra problem step by step. Show your work clearly and state the final answer.
+
+Example:
+Q: If 3x + 2 = 11, what is x?
+A: Step 1: Subtract 2 from both sides
+   3x + 2 - 2 = 11 - 2
+   3x = 9
+
+   Step 2: Divide both sides by 3
+   x = 9 ÷ 3
+   x = 3
+
+   Final answer: x = 3
+
+Now solve:
+{question}"""
+
+        elif subject == "chinese":
+            content = f"""You are an expert in Chinese language, literature, history, and culture. Provide accurate and detailed information.
+
+{question}"""
+
+        else:
+            content = question
+
+        messages = [{"role": "user", "content": content}]
+        return self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+
     def _generate_batch(self, prompts: List[str]) -> List[str]:
-        """Generate answers for a batch of prompts"""
+        """Generate answers with quality settings"""
         inputs = self.tokenizer(
             prompts,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=512
+            max_length=1024
         ).to(self.model.device)
 
         with torch.inference_mode():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=250,
-                temperature=0.1,
+                max_new_tokens=300,
+                temperature=0.15,  # Low for accuracy
                 top_p=0.95,
                 do_sample=True,
                 pad_token_id=self.tokenizer.eos_token_id,
@@ -91,50 +125,21 @@ class InferencePipeline:
         return answers
 
     def __call__(self, questions: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Process all questions"""
+        """Process questions with high accuracy"""
         if not questions:
             return []
 
         print(f"⚡ Processing {len(questions)} questions...")
 
-        # Create prompts with subject-specific optimization
+        # Create prompts
         prompts = []
         for q in questions:
             subject = q.get('subject', '').lower()
-            question_text = q['question']
-
-            # Enhanced prompts for algebra and Chinese
-            if subject == "algebra":
-                content = f"""Solve this algebra problem step by step and give the final answer clearly.
-
-Example:
-Q: If 3x + 2 = 11, what is x?
-A: Subtract 2 from both sides: 3x = 9
-   Divide both sides by 3: x = 3
-   Therefore, x = 3
-
-Now solve:
-{question_text}"""
-
-            elif subject == "chinese":
-                content = f"""You are an expert in Chinese language and culture. Answer this question accurately and completely.
-
-{question_text}"""
-
-            else:
-                # Simple direct prompt for other subjects
-                content = question_text
-
-            messages = [{"role": "user", "content": content}]
-            prompt = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
-            )
+            prompt = self._create_prompt(q['question'], subject)
             prompts.append(prompt)
 
-        # Batch process (8 at a time for speed)
-        batch_size = 8
+        # Batch process (smaller batches for 8B model)
+        batch_size = 4
         all_answers = []
 
         for i in range(0, len(prompts), batch_size):
@@ -164,4 +169,4 @@ Now solve:
 
 def loadPipeline():
     """Entry point"""
-    return InferencePipeline()
+    return HighAccuracyPipeline()
