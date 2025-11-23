@@ -1,6 +1,6 @@
 transformers==4.51.3
 torch
-vllm
+vllm==0.4.1
 bitsandbytes
 accelerate
 autoawq
