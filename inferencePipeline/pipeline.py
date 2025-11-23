@@ -11,6 +11,7 @@ OPTIMIZATIONS:
 ✅ Answer extraction (returns only final answers, not reasoning)
 ✅ Prefix caching for few-shot examples
 ✅ CPU swap space for memory overflow handling
+✅ Speculative decoding with draft model for 2-3x speedup
 """
 
 import os
@@ -24,12 +25,16 @@ from pathlib import Path
 
 # Configuration
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
-# Configuration
-# Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
 MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
+
+# Speculative decoding configuration
+# Use smaller draft model for faster token generation with verification
+ENABLE_SPECULATIVE_DECODING = os.environ.get("ENABLE_SPECULATIVE_DECODING", "true").lower() == "true"
+DRAFT_MODEL_NAME = os.environ.get("DRAFT_MODEL_NAME", "Qwen/Qwen3-1.7B")  # Fast draft model (1.7B for better accuracy)
+SPECULATIVE_MAX_MODEL_LEN = 2048  # Shorter for draft model to save memory
 
 # Model-specific settings
 MODEL_CONFIGS = {
@@ -249,21 +254,46 @@ class InferencePipeline:
              model_path = RAW_MODEL_PATH
 
         print("Using model path: ", model_path)
-        self.llm = LLM(
-            model=model_path,
-            quantization=model_config['quantization'],
-            dtype=model_config['dtype'],
-            gpu_memory_utilization=model_config['gpu_memory_utilization'],
-            max_model_len=16384,              # Increased for Full Context CAG (Chinese KB is ~8k tokens)
-            enforce_eager=False,
-            max_num_seqs=16,                  # Reduced slightly to save VRAM for large context
-            max_num_batched_tokens=16384,     # Match model len
-            enable_prefix_caching=True,
-            trust_remote_code=True,
-            tensor_parallel_size=1,
-            swap_space=4,
-            disable_log_stats=True,
-        )
+
+        # Speculative decoding setup
+        speculative_config = None
+        if ENABLE_SPECULATIVE_DECODING:
+            print(f"🚀 Setting up speculative decoding with draft model: {DRAFT_MODEL_NAME}")
+            # Find draft model path
+            try:
+                draft_model_path = find_model_path(DRAFT_MODEL_NAME, CACHE_DIR)
+                speculative_config = {
+                    "draft_model": draft_model_path,
+                    "num_speculative_tokens": 5,  # Number of tokens to speculate ahead
+                }
+                print(f"✅ Draft model loaded from: {draft_model_path}")
+            except Exception as e:
+                print(f"⚠️  Failed to load draft model, disabling speculative decoding: {e}")
+                speculative_config = None
+
+        # Build LLM arguments
+        llm_args = {
+            "model": model_path,
+            "quantization": model_config['quantization'],
+            "dtype": model_config['dtype'],
+            "gpu_memory_utilization": model_config['gpu_memory_utilization'] - 0.05 if speculative_config else model_config['gpu_memory_utilization'],  # Reserve memory for draft model
+            "max_model_len": 16384,              # Increased for Full Context CAG (Chinese KB is ~8k tokens)
+            "enforce_eager": False,
+            "max_num_seqs": 16,                  # Reduced slightly to save VRAM for large context
+            "max_num_batched_tokens": 16384,     # Match model len
+            "enable_prefix_caching": True,
+            "trust_remote_code": True,
+            "tensor_parallel_size": 1,
+            "swap_space": 4,
+            "disable_log_stats": True,
+        }
+
+        # Add speculative decoding if enabled
+        if speculative_config:
+            llm_args["speculative_config"] = speculative_config
+            print("✅ Speculative decoding enabled!")
+
+        self.llm = LLM(**llm_args)
 
         self.tokenizer = self.llm.get_tokenizer()
         

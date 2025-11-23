@@ -1,8 +1,8 @@
-代数知识库 / Algebra Knowledge Base
+Algebra Knowledge Base
 
-=== 基础代数公式 / Basic Algebra Formulas ===
+=== Basic Algebra Formulas ===
 
-恒等式 (Identities):
+Identities:
 - (a + b)² = a² + 2ab + b²
 - (a - b)² = a² - 2ab + b²
 - (a + b)(a - b) = a² - b²  [Difference of squares]
@@ -12,41 +12,41 @@
 - a³ - b³ = (a - b)(a² + ab + b²)
 - a² + b² + c² + 2ab + 2bc + 2ca = (a + b + c)²
 
-因式分解 (Factoring):
+Factoring:
 - x² + (a+b)x + ab = (x + a)(x + b)
 - ax² + bx + c: Use quadratic formula or factoring
 - Perfect square trinomial: a² ± 2ab + b² = (a ± b)²
 - Difference of squares: a² - b² = (a+b)(a-b)
 - Sum/Difference of cubes: a³ ± b³ = (a ± b)(a² ∓ ab + b²)
 
-=== 二次方程 / Quadratic Equations ===
+=== Quadratic Equations ===
 
-标准形式 (Standard Form):
+Standard Form:
 ax² + bx + c = 0
 
-求根公式 (Quadratic Formula):
+Quadratic Formula:
 x = [-b ± √(b² - 4ac)] / (2a)
 
-判别式 (Discriminant):
+Discriminant:
 Δ = b² - 4ac
 - Δ > 0: Two distinct real roots
 - Δ = 0: One repeated real root (double root)
 - Δ < 0: Two complex conjugate roots
 
-韦达定理 (Vieta's Formulas):
+Vieta's Formulas:
 For ax² + bx + c = 0 with roots α and β:
 - Sum of roots: α + β = -b/a
 - Product of roots: α × β = c/a
 
-完全平方 (Completing the Square):
+Completing the Square:
 x² + bx + c = 0
 → x² + bx = -c
 → x² + bx + (b/2)² = -c + (b/2)²
 → (x + b/2)² = -c + b²/4
 
-=== 指数与对数 / Exponents and Logarithms ===
+=== Exponents and Logarithms ===
 
-指数法则 (Exponent Laws):
+Exponent Laws:
 - a^m × a^n = a^(m+n)
 - a^m / a^n = a^(m-n)
 - (a^m)^n = a^(mn)
@@ -56,7 +56,7 @@ x² + bx + c = 0
 - a^(m/n) = ⁿ√(a^m)
 - a^(1/n) = ⁿ√a
 
-对数法则 (Logarithm Laws):
+Logarithm Laws:
 - log_a(xy) = log_a(x) + log_a(y)
 - log_a(x/y) = log_a(x) - log_a(y)
 - log_a(x^n) = n × log_a(x)
@@ -65,192 +65,192 @@ x² + bx + c = 0
 - a^(log_a(x)) = x
 - log_a(x) = log_b(x) / log_b(a)  [Change of base]
 
-自然对数 (Natural Logarithm):
+Natural Logarithm:
 - ln(e) = 1, where e ≈ 2.71828
 - ln(e^x) = x
 - e^(ln(x)) = x
 
-=== 不等式 / Inequalities ===
+=== Inequalities ===
 
-基本性质 (Basic Properties):
+Basic Properties:
 - If a > b, then a + c > b + c
 - If a > b and c > 0, then ac > bc
 - If a > b and c < 0, then ac < bc
 - If a > b > 0, then 1/a < 1/b
 - If a > b, then -a < -b
 
-绝对值不等式 (Absolute Value Inequalities):
+Absolute Value Inequalities:
 - |x| < a means -a < x < a
 - |x| > a means x > a or x < -a
 - |x - a| < b means a - b < x < a + b
 - Triangle inequality: |a + b| ≤ |a| + |b|
 - |a - b| ≥ ||a| - |b||
 
-AM-GM不等式 (AM-GM Inequality):
+AM-GM Inequality:
 For positive numbers a₁, a₂, ..., aₙ:
 (a₁ + a₂ + ... + aₙ)/n ≥ ⁿ√(a₁ × a₂ × ... × aₙ)
 Equality holds when all aᵢ are equal.
 
-柯西不等式 (Cauchy-Schwarz Inequality):
+Cauchy-Schwarz Inequality:
 (a₁² + a₂² + ... + aₙ²)(b₁² + b₂² + ... + bₙ²) ≥ (a₁b₁ + a₂b₂ + ... + aₙbₙ)²
 
-=== 函数 / Functions ===
+=== Functions ===
 
-线性函数 (Linear Functions):
+Linear Functions:
 - f(x) = mx + b
 - Slope: m = (y₂ - y₁)/(x₂ - x₁)
 - y-intercept: (0, b)
 - x-intercept: (-b/m, 0)
 
-二次函数 (Quadratic Functions):
+Quadratic Functions:
 - f(x) = ax² + bx + c
 - Vertex form: f(x) = a(x - h)² + k, vertex at (h, k)
 - Vertex: x = -b/(2a), y = f(-b/(2a))
 - Axis of symmetry: x = -b/(2a)
 - Opens upward if a > 0, downward if a < 0
 
-多项式函数 (Polynomial Functions):
+Polynomial Functions:
 - Degree n: f(x) = aₙx^n + aₙ₋₁x^(n-1) + ... + a₁x + a₀
 - Fundamental Theorem of Algebra: n-degree polynomial has exactly n roots (counting multiplicity)
 - Remainder Theorem: f(a) = remainder when f(x) is divided by (x - a)
 - Factor Theorem: (x - a) is a factor of f(x) if and only if f(a) = 0
 
-有理函数 (Rational Functions):
+Rational Functions:
 - f(x) = P(x)/Q(x) where P and Q are polynomials
 - Vertical asymptotes where Q(x) = 0
 - Horizontal asymptote: y = lim(x→∞) f(x)
 - Oblique asymptote when degree(P) = degree(Q) + 1
 
-指数函数 (Exponential Functions):
+Exponential Functions:
 - f(x) = a^x, where a > 0, a ≠ 1
 - If a > 1: increasing
 - If 0 < a < 1: decreasing
 - Domain: all real numbers
 - Range: (0, ∞)
 
-对数函数 (Logarithmic Functions):
+Logarithmic Functions:
 - f(x) = log_a(x), where a > 0, a ≠ 1
 - Inverse of exponential function
 - Domain: (0, ∞)
 - Range: all real numbers
 - Vertical asymptote: x = 0
 
-=== 序列与级数 / Sequences and Series ===
+=== Sequences and Series ===
 
-等差数列 (Arithmetic Sequence):
+Arithmetic Sequence:
 - General term: aₙ = a₁ + (n-1)d
 - Sum of n terms: Sₙ = n(a₁ + aₙ)/2 = n[2a₁ + (n-1)d]/2
 
-等比数列 (Geometric Sequence):
+Geometric Sequence:
 - General term: aₙ = a₁ × r^(n-1)
 - Sum of n terms: Sₙ = a₁(1 - r^n)/(1 - r), for r ≠ 1
 - Infinite sum (|r| < 1): S = a₁/(1 - r)
 
-调和数列 (Harmonic Sequence):
+Harmonic Sequence:
 - 1/a, 1/b, 1/c, ... where a, b, c form arithmetic sequence
 
-斐波那契数列 (Fibonacci Sequence):
+Fibonacci Sequence:
 - F(n) = F(n-1) + F(n-2)
 - F(0) = 0, F(1) = 1
 - Sequence: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
 
-求和公式 (Summation Formulas):
+Summation Formulas:
 - Σ(k=1 to n) k = n(n+1)/2
 - Σ(k=1 to n) k² = n(n+1)(2n+1)/6
 - Σ(k=1 to n) k³ = [n(n+1)/2]²
 
-=== 排列组合 / Permutations and Combinations ===
+=== Permutations and Combinations ===
 
-排列 (Permutations):
+Permutations:
 - P(n, r) = n!/(n-r)!
 - Number of arrangements of r items from n items
 
-组合 (Combinations):
+Combinations:
 - C(n, r) = n!/[r!(n-r)!] = P(n,r)/r!
 - Number of selections of r items from n items
 - C(n, r) = C(n, n-r)
 
-二项式定理 (Binomial Theorem):
+Binomial Theorem:
 (a + b)^n = Σ(k=0 to n) C(n,k) × a^(n-k) × b^k
 
-杨辉三角 (Pascal's Triangle):
+Pascal's Triangle:
 - C(n, k) = C(n-1, k-1) + C(n-1, k)
 - Row n contains binomial coefficients for (a+b)^n
 
-=== 复数 / Complex Numbers ===
+=== Complex Numbers ===
 
-基本形式 (Forms):
+Forms:
 - Rectangular: z = a + bi, where i² = -1
 - Polar: z = r(cos θ + i sin θ) = r·e^(iθ)
 - Modulus: |z| = √(a² + b²)
 - Argument: θ = arctan(b/a)
 
-运算 (Operations):
+Operations:
 - Addition: (a+bi) + (c+di) = (a+c) + (b+d)i
 - Multiplication: (a+bi)(c+di) = (ac-bd) + (ad+bc)i
 - Division: (a+bi)/(c+di) = [(ac+bd) + (bc-ad)i]/(c²+d²)
 - Conjugate: z̄ = a - bi
 - z × z̄ = |z|²
 
-欧拉公式 (Euler's Formula):
+Euler's Formula:
 e^(iθ) = cos θ + i sin θ
 e^(iπ) + 1 = 0
 
-棣莫弗定理 (De Moivre's Theorem):
+De Moivre's Theorem:
 (cos θ + i sin θ)^n = cos(nθ) + i sin(nθ)
 
-=== 矩阵与行列式 / Matrices and Determinants ===
+=== Matrices and Determinants ===
 
-矩阵运算 (Matrix Operations):
+Matrix Operations:
 - Addition: [A + B]ᵢⱼ = Aᵢⱼ + Bᵢⱼ
 - Scalar multiplication: [kA]ᵢⱼ = k·Aᵢⱼ
 - Matrix multiplication: [AB]ᵢⱼ = Σₖ Aᵢₖ·Bₖⱼ
 - Transpose: [A^T]ᵢⱼ = Aⱼᵢ
 
-行列式 (Determinants):
+Determinants:
 2×2: |a b|
      |c d| = ad - bc
 
 3×3: Use cofactor expansion or Sarrus rule
 
-单位矩阵 (Identity Matrix):
+Identity Matrix:
 I = [1 0 0]
     [0 1 0]
     [0 0 1]
 AI = IA = A
 
-逆矩阵 (Inverse Matrix):
+Inverse Matrix:
 - A·A⁻¹ = A⁻¹·A = I
 - For 2×2: A = [a b], A⁻¹ = 1/(ad-bc) [d -b]
               [c d]                    [-c a]
 - Exists only if det(A) ≠ 0
 
-线性方程组 (Systems of Linear Equations):
+Systems of Linear Equations:
 Ax = b
 - Solution: x = A⁻¹b (if A is invertible)
 - Cramer's Rule: xᵢ = det(Aᵢ)/det(A)
 
-=== 向量 / Vectors ===
+=== Vectors ===
 
-向量运算 (Vector Operations):
+Vector Operations:
 - Addition: u + v = (u₁+v₁, u₂+v₂, u₃+v₃)
 - Scalar multiplication: ku = (ku₁, ku₂, ku₃)
 - Magnitude: |v| = √(v₁² + v₂² + v₃²)
 - Unit vector: û = v/|v|
 
-点积 (Dot Product):
+Dot Product:
 - u · v = u₁v₁ + u₂v₂ + u₃v₃
 - u · v = |u||v|cos θ
 - Orthogonal if u · v = 0
 
-叉积 (Cross Product):
+Cross Product:
 - u × v = (u₂v₃ - u₃v₂, u₃v₁ - u₁v₃, u₁v₂ - u₂v₁)
 - |u × v| = |u||v|sin θ
 - Perpendicular to both u and v
 
-=== 微积分基础 / Calculus Basics ===
+=== Calculus Basics ===
 
-导数 (Derivatives):
+Derivatives:
 Basic rules:
 - d/dx(c) = 0
 - d/dx(x^n) = nx^(n-1)  [Power rule]
@@ -260,13 +260,13 @@ Basic rules:
 - d/dx(cos x) = -sin x
 - d/dx(tan x) = sec²x
 
-运算法则 (Derivative Rules):
+Derivative Rules:
 - Sum: (f + g)' = f' + g'
 - Product: (fg)' = f'g + fg'
 - Quotient: (f/g)' = (f'g - fg')/g²
 - Chain: (f∘g)' = f'(g(x))·g'(x)
 
-积分 (Integrals):
+Integrals:
 Basic integrals:
 - ∫ x^n dx = x^(n+1)/(n+1) + C, n ≠ -1
 - ∫ 1/x dx = ln|x| + C
@@ -274,67 +274,67 @@ Basic integrals:
 - ∫ sin x dx = -cos x + C
 - ∫ cos x dx = sin x + C
 
-定积分 (Definite Integral):
+Definite Integral:
 ∫[a to b] f(x)dx = F(b) - F(a), where F'(x) = f(x)
 
-微积分基本定理 (Fundamental Theorem of Calculus):
+Fundamental Theorem of Calculus:
 d/dx [∫[a to x] f(t)dt] = f(x)
 
-=== 三角恒等式 / Trigonometric Identities ===
+=== Trigonometric Identities ===
 
-基本恒等式 (Pythagorean Identities):
+Pythagorean Identities:
 - sin²θ + cos²θ = 1
 - 1 + tan²θ = sec²θ
 - 1 + cot²θ = csc²θ
 
-和差公式 (Sum and Difference):
+Sum and Difference:
 - sin(A ± B) = sin A cos B ± cos A sin B
 - cos(A ± B) = cos A cos B ∓ sin A sin B
 - tan(A ± B) = (tan A ± tan B)/(1 ∓ tan A tan B)
 
-二倍角公式 (Double Angle):
+Double Angle:
 - sin(2θ) = 2 sin θ cos θ
 - cos(2θ) = cos²θ - sin²θ = 2cos²θ - 1 = 1 - 2sin²θ
 - tan(2θ) = 2tan θ/(1 - tan²θ)
 
-半角公式 (Half Angle):
+Half Angle:
 - sin²(θ/2) = (1 - cos θ)/2
 - cos²(θ/2) = (1 + cos θ)/2
 - tan(θ/2) = (1 - cos θ)/sin θ = sin θ/(1 + cos θ)
 
-积化和差 (Product-to-Sum):
+Product-to-Sum:
 - sin A cos B = [sin(A+B) + sin(A-B)]/2
 - cos A cos B = [cos(A+B) + cos(A-B)]/2
 - sin A sin B = [cos(A-B) - cos(A+B)]/2
 
-和差化积 (Sum-to-Product):
+Sum-to-Product:
 - sin A + sin B = 2 sin[(A+B)/2] cos[(A-B)/2]
 - sin A - sin B = 2 cos[(A+B)/2] sin[(A-B)/2]
 - cos A + cos B = 2 cos[(A+B)/2] cos[(A-B)/2]
 - cos A - cos B = -2 sin[(A+B)/2] sin[(A-B)/2]
 
-=== 圆锥曲线 / Conic Sections ===
+=== Conic Sections ===
 
-圆 (Circle):
+Circle:
 - Standard form: (x-h)² + (y-k)² = r²
 - Center: (h, k), Radius: r
 - General form: x² + y² + Dx + Ey + F = 0
 
-椭圆 (Ellipse):
+Ellipse:
 - Standard form: (x-h)²/a² + (y-k)²/b² = 1
 - Center: (h, k)
 - Semi-major axis: a, Semi-minor axis: b
 - Foci: c = √(a² - b²)
 - Eccentricity: e = c/a (0 < e < 1)
 
-双曲线 (Hyperbola):
+Hyperbola:
 - Standard form: (x-h)²/a² - (y-k)²/b² = 1
 - Center: (h, k)
 - Foci: c = √(a² + b²)
 - Asymptotes: y - k = ±(b/a)(x - h)
 - Eccentricity: e = c/a (e > 1)
 
-抛物线 (Parabola):
+Parabola:
 - Standard form: (y-k)² = 4p(x-h) [horizontal]
                  (x-h)² = 4p(y-k) [vertical]
 - Vertex: (h, k)
@@ -342,71 +342,71 @@ d/dx [∫[a to x] f(t)dt] = f(x)
 - Directrix: p units opposite from vertex
 - Eccentricity: e = 1
 
-=== 数论基础 / Number Theory Basics ===
+=== Number Theory Basics ===
 
-整除性 (Divisibility):
+Divisibility:
 - a | b means a divides b (b = ka for some integer k)
 - If a | b and a | c, then a | (mb + nc) for any integers m, n
 
-最大公约数 (GCD - Greatest Common Divisor):
+Greatest Common Divisor (GCD):
 - gcd(a, b): largest positive integer dividing both a and b
 - Euclidean algorithm: gcd(a, b) = gcd(b, a mod b)
 - gcd(a, b) × lcm(a, b) = a × b
 
-最小公倍数 (LCM - Least Common Multiple):
+Least Common Multiple (LCM):
 - lcm(a, b): smallest positive integer divisible by both a and b
 
-质数 (Prime Numbers):
+Prime Numbers:
 - Prime: integer > 1 with exactly two divisors (1 and itself)
 - Composite: integer > 1 that is not prime
 - Fundamental Theorem of Arithmetic: Every integer > 1 has unique prime factorization
 
-模运算 (Modular Arithmetic):
+Modular Arithmetic:
 - a ≡ b (mod n) means n | (a - b)
 - (a + b) mod n = [(a mod n) + (b mod n)] mod n
 - (a × b) mod n = [(a mod n) × (b mod n)] mod n
 
-费马小定理 (Fermat's Little Theorem):
+Fermat's Little Theorem:
 If p is prime and gcd(a, p) = 1, then:
 a^(p-1) ≡ 1 (mod p)
 
-=== 集合论 / Set Theory ===
+=== Set Theory ===
 
-基本概念 (Basic Concepts):
+Basic Concepts:
 - Empty set: ∅ or {}
 - Subset: A ⊆ B
 - Proper subset: A ⊂ B
 - Universal set: U
 
-运算 (Operations):
+Operations:
 - Union: A ∪ B = {x : x ∈ A or x ∈ B}
 - Intersection: A ∩ B = {x : x ∈ A and x ∈ B}
 - Complement: A' = {x ∈ U : x ∉ A}
 - Difference: A - B = {x : x ∈ A and x ∉ B}
 
-定律 (Laws):
+Laws:
 - Commutative: A ∪ B = B ∪ A, A ∩ B = B ∩ A
 - Associative: (A ∪ B) ∪ C = A ∪ (B ∪ C)
 - Distributive: A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C)
 - De Morgan's: (A ∪ B)' = A' ∩ B', (A ∩ B)' = A' ∪ B'
 
-笛卡尔积 (Cartesian Product):
+Cartesian Product:
 A × B = {(a, b) : a ∈ A, b ∈ B}
 
-=== 逻辑 / Logic ===
+=== Logic ===
 
-逻辑运算符 (Logical Operators):
+Logical Operators:
 - NOT (¬): negation
 - AND (∧): conjunction
 - OR (∨): disjunction
 - IMPLIES (→): implication
 - IFF (↔): if and only if (biconditional)
 
-真值表 (Truth Tables):
+Truth Tables:
 - p → q is false only when p is true and q is false
 - p ↔ q is true when p and q have the same truth value
 
-逻辑等价 (Logical Equivalences):
+Logical Equivalences:
 - Double negation: ¬(¬p) ≡ p
 - De Morgan's: ¬(p ∧ q) ≡ ¬p ∨ ¬q, ¬(p ∨ q) ≡ ¬p ∧ ¬q
 - Contrapositive: (p → q) ≡ (¬q → ¬p)
