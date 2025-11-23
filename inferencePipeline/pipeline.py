@@ -26,7 +26,7 @@ from pathlib import Path
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
 # Configuration
 # Model options: "Qwen/Qwen3-8B" (recommended), "Qwen/Qwen3-4B", or "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3-4B")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 CACHE_DIR = "/app/models"
 CHINESE_KB_PATH = os.path.join(os.path.dirname(__file__), "chinese_kb.txt")
 ALGEBRA_KB_PATH = os.path.join(os.path.dirname(__file__), "algebra_kb.txt")
@@ -167,7 +167,7 @@ def quantize_model_awq(model_path: str, cache_dir: str, model_name: str) -> str:
         "DNA replication is a fundamental process in cell division.",
         "The currency of Japan is the Yen.",
         "Marie Curie was the first woman to win a Nobel Prize.",
-    ] * 5  # Repeat to get 130 samples (optimal for AWQ)
+    ] * 2  # Repeat to get 130 samples (optimal for AWQ)
     
     print(f"📊 Using {len(calibration_data)} calibration samples (optimized for AWQ)")
     
@@ -268,7 +268,7 @@ class InferencePipeline:
         self.tokenizer = self.llm.get_tokenizer()
         
         # Warmup the cache with Knowledge Bases
-        self._warmup_cache()
+        #self._warmup_cache()
 
         # Sampling parameters for Chinese (optimized)
         self.params_chinese = SamplingParams(
