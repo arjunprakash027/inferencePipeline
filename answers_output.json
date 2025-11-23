@@ -2,28 +2,28 @@
   {
     "questionID": "390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324",
     "question": "Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?",
-    "answer": "A great example of using matrices to solve a system of linear equations!\n\nThe system of equations you provided is:\n\nx + y = 5\nx - y = 1\n\nTo solve this system, we can represent the two equations as a matrix equation:\n\n| 1 1 |   | x |   | 5 |\n| 1 -1 | = | y | * | 1 |\n\nHere, the matrix on the left-hand side is called the coefficient matrix, and the matrix on the right-hand side is the constant matrix. The vertical lines are called the augmented matrix.\n\nTo solve for x and y, we can use row operations to transform the augmented matrix into reduced row echelon form (RREF). The RREF will have the",
+    "answer": "B, where A is the coefficient matrix, X is the variable matrix, and B is the constant matrix",
     "difficulty": "medium",
     "subject": "algebra"
   },
   {
     "questionID": "a2bbafa96bfe1405f7cbc3abcc96bd25c755b78960eae8ecc488049cce6cd584",
     "question": "What kind of function has a graph that is a straight line?",
-    "answer": "A linear function.",
+    "answer": "Linear function.",
     "difficulty": "medium",
     "subject": "algebra"
   },
   {
     "questionID": "be4496d763d9881cef6dc62eef58147a0615aac4463320d8961a61365e7b4a8d",
     "question": "What's the highest point in South America?",
-    "answer": "Aconcagua, located in Argentina, is the highest point in South America, with an elevation of 6,962 meters (22,841 feet) above sea level.",
+    "answer": "Mount Aconcagua in Argentina (6,961 meters).",
     "difficulty": "medium",
     "subject": "geography"
   },
   {
     "questionID": "834337a7ac764aa73b783002f52dbffe34f2c3c24d5334fdbd720d7087d2d524",
     "question": "I read about the 'Llanos.' What are they and where are they found?",
-    "answer": "The Llanos are a vast grassland region in South America, primarily located in the countries of Venezuela, Colombia, and Brazil. They cover a significant portion of the continent, stretching across the northern part of South America, including parts of the Orinoco Delta in Venezuela and the Amazonas state in Brazil.",
+    "answer": "The Llanos are a savanna region in South America, specifically in Colombia and Venezuela.",
     "difficulty": "medium",
     "subject": "geography"
   },
@@ -37,35 +37,35 @@
   {
     "questionID": "154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b",
     "question": "In what ways did the Industrial Revolution influence political ideologies in Europe?",
-    "answer": "The Industrial Revolution had a profound impact on the development of political ideologies in Europe, leading to significant changes in the way people thought about government, economy, and society. Here are some key ways in which the Industrial Revolution influenced European political ideologies:\n\n1. **Emergence of Liberalism**: The Industrial Revolution created new social and economic problems, such as urbanization, poverty, and inequality. In response, liberal thinkers like Adam Smith, John Stuart Mill, and Jeremy Bentham argued for individual rights, free markets, and limited government intervention in economic affairs. Liberalism became a dominant ideology in Europe, emphasizing individual freedom, democracy, and the protection of individual rights.\n2. **Rise of Socialism**: The Industrial Revolution also led to the growth of",
+    "answer": "The Industrial Revolution influenced the development of socialism and communism in Europe, as it highlighted the exploitation of workers and the concentration of wealth among a few industrialists, leading to the rise of socialist and communist movements that sought to address these issues.",
     "difficulty": "medium",
     "subject": "history"
   },
   {
     "questionID": 4,
     "question": "What is gods own country",
-    "answer": "Ireland.",
+    "answer": "Jammu and Kashmir.",
     "difficulty": "mediu m",
     "subject": "geography"
   },
   {
     "questionID": 4,
     "question": "What country is called peral of africa",
-    "answer": "Ireland.",
+    "answer": "Jammu and Kashmir.",
     "difficulty": "mediu m",
     "subject": "geography"
   },
   {
     "questionID": 7,
     "question": "Who won world war 2",
-    "answer": "The Allies, which consisted of the United States, the United Kingdom, France, and the Soviet Union, ultimately emerged victorious in World War II.",
+    "answer": "The Allied Powers (United States, Soviet Union, United Kingdom, and France).",
     "difficulty": "medium",
     "subject": "History"
   },
   {
     "questionID": 8,
     "question": "what is Profitability Index",
-    "answer": "The Profitability Index (PI) is a financial metric used to evaluate the profitability of a project or investment by comparing its expected return on investment (ROI) to its cost. It is calculated by dividing the expected profit by the expected cost of the project.\n\nThe formula for Profitability Index is:\n\nProfitability Index (PI) = (Expected Profit / Expected Cost)\n\nWhere:\n\n* Expected Profit is the expected revenue minus the expected costs\n* Expected Cost is the total cost of the project\n\nA higher Profitability Index indicates that the project is more profitable, while a lower index indicates that the project is",
+    "answer": "Return on Investment (ROI)",
     "difficulty": "medium",
     "subject": "Finance"
   }

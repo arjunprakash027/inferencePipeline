@@ -1,0 +1,1055 @@
+中文语言和文化知识库 / Chinese Language and Culture Knowledge Base
+
+=== 汉字系统 / Chinese Writing System ===
+
+汉字（Chinese characters）是世界上最古老的文字系统之一，有超过3000年的历史。
+现代汉语使用简体字（Simplified Chinese）和繁体字（Traditional Chinese）两种字体。
+中国大陆使用简体字，台湾、香港和澳门使用繁体字。
+
+常用汉字约3500个，高等教育需要掌握约5000-8000个汉字。
+汉字由部首（radicals）组成，常见部首有214个。
+
+笔画顺序规则：
+- 从上到下（top to bottom）
+- 从左到右（left to right）
+- 先横后竖（horizontal before vertical）
+- 先撇后捺（left-falling before right-falling）
+
+=== 拼音系统 / Pinyin System ===
+
+汉语拼音（Hanyu Pinyin）是汉语的罗马化系统，1958年正式采用。
+汉语有四个声调（four tones）：
+- 第一声（阴平）：高平调 (¯) 如：妈 mā
+- 第二声（阳平）：高升调 (´) 如：麻 má
+- 第三声（上声）：降升调 (ˇ) 如：马 mǎ
+- 第四声（去声）：高降调 (`) 如：骂 mà
+- 轻声（neutral tone）：不标调 如：吗 ma
+
+=== 中国朝代 / Chinese Dynasties ===
+
+夏朝（Xia Dynasty）：约公元前2070-1600年
+商朝（Shang Dynasty）：约公元前1600-1046年
+周朝（Zhou Dynasty）：公元前1046-256年
+  - 西周（Western Zhou）：公元前1046-771年
+  - 东周（Eastern Zhou）：公元前770-256年
+    - 春秋时期（Spring and Autumn Period）：公元前770-476年
+    - 战国时期（Warring States Period）：公元前475-221年
+
+秦朝（Qin Dynasty）：公元前221-206年
+  - 秦始皇（Emperor Qin Shi Huang）统一中国，修建长城
+  - 统一文字、货币、度量衡
+
+汉朝（Han Dynasty）：公元前202-220年
+  - 西汉（Western Han）：公元前202-9年
+  - 东汉（Eastern Han）：25-220年
+  - 开辟丝绸之路（Silk Road）
+
+三国时期（Three Kingdoms）：220-280年
+  - 魏（Wei）、蜀（Shu）、吴（Wu）
+
+晋朝（Jin Dynasty）：265-420年
+南北朝（Southern and Northern Dynasties）：420-589年
+
+隋朝（Sui Dynasty）：581-618年
+  - 修建大运河（Grand Canal）
+
+唐朝（Tang Dynasty）：618-907年
+  - 中国历史的黄金时代
+  - 诗歌繁荣，李白、杜甫等著名诗人
+
+宋朝（Song Dynasty）：960-1279年
+  - 北宋（Northern Song）：960-1127年
+  - 南宋（Southern Song）：1127-1279年
+  - 发明活字印刷术、指南针、火药
+
+元朝（Yuan Dynasty）：1271-1368年
+  - 蒙古族建立，忽必烈汗（Kublai Khan）
+
+明朝（Ming Dynasty）：1368-1644年
+  - 修建紫禁城（Forbidden City）
+  - 郑和下西洋（Zheng He's voyages）
+
+清朝（Qing Dynasty）：1644-1912年
+  - 中国最后一个封建王朝
+  - 满族统治
+
+中华民国（Republic of China）：1912-1949年
+中华人民共和国（People's Republic of China）：1949年至今
+
+=== 中国传统节日 / Traditional Chinese Festivals ===
+
+春节（Spring Festival / Chinese New Year）：农历正月初一
+  - 中国最重要的传统节日
+  - 贴春联、放鞭炮、吃饺子、发红包
+  - 十二生肖：鼠、牛、虎、兔、龙、蛇、马、羊、猴、鸡、狗、猪
+
+元宵节（Lantern Festival）：农历正月十五
+  - 吃元宵（汤圆）、赏花灯、猜灯谜
+
+清明节（Tomb Sweeping Day）：公历4月4-6日
+  - 祭祖扫墓、踏青春游
+
+端午节（Dragon Boat Festival）：农历五月初五
+  - 纪念屈原（Qu Yuan）
+  - 吃粽子、赛龙舟
+
+七夕节（Qixi Festival / Chinese Valentine's Day）：农历七月初七
+  - 牛郎织女的传说
+
+中秋节（Mid-Autumn Festival）：农历八月十五
+  - 吃月饼、赏月、团圆
+  - 嫦娥奔月的传说
+
+重阳节（Double Ninth Festival）：农历九月初九
+  - 登高、赏菊、敬老
+
+=== 中国哲学与宗教 / Chinese Philosophy and Religion ===
+
+儒家思想（Confucianism）：
+  - 创始人：孔子（Confucius，公元前551-479年）
+  - 核心思想：仁、义、礼、智、信
+  - 经典著作：《论语》（Analects）、《孟子》、《大学》、《中庸》
+
+道家思想（Taoism）：
+  - 创始人：老子（Laozi）
+  - 核心思想：道法自然、无为而治
+  - 经典著作：《道德经》（Tao Te Ching）、《庄子》
+
+佛教（Buddhism）：
+  - 东汉时期传入中国
+  - 主要宗派：禅宗（Zen）、净土宗、天台宗
+
+法家思想（Legalism）：
+  - 代表人物：韩非子、商鞅
+  - 强调法治、权术
+
+墨家思想（Mohism）：
+  - 创始人：墨子（Mozi）
+  - 主张兼爱、非攻
+
+=== 中国四大发明 / Four Great Inventions ===
+
+造纸术（Papermaking）：东汉蔡伦改进，公元105年
+印刷术（Printing）：唐朝发明雕版印刷，宋朝毕昇发明活字印刷
+指南针（Compass）：宋朝应用于航海
+火药（Gunpowder）：唐朝发明，宋朝用于军事
+
+=== 中国文学 / Chinese Literature ===
+
+四大名著（Four Great Classical Novels）：
+1. 《红楼梦》（Dream of the Red Chamber）- 曹雪芹
+2. 《西游记》（Journey to the West）- 吴承恩
+3. 《三国演义》（Romance of the Three Kingdoms）- 罗贯中
+4. 《水浒传》（Water Margin / Outlaws of the Marsh）- 施耐庵
+
+唐诗宋词（Tang Poetry and Song Lyrics）：
+- 李白（Li Bai）：诗仙，浪漫主义
+- 杜甫（Du Fu）：诗圣，现实主义
+- 白居易（Bai Juyi）：诗魔
+- 李商隐（Li Shangyin）
+- 苏轼（Su Shi）：宋代文豪
+- 李清照（Li Qingzhao）：女词人
+
+古代诗歌形式：
+- 绝句（jueju）：四句
+- 律诗（lüshi）：八句
+- 古体诗（guti shi）
+- 词（ci）：长短句
+
+=== 中国戏曲 / Chinese Opera ===
+
+京剧（Peking Opera）：
+- 四大行当：生、旦、净、丑
+- 四大名旦：梅兰芳、程砚秋、尚小云、荀慧生
+
+其他剧种：
+- 昆曲（Kunqu Opera）：最古老的戏曲形式
+- 粤剧（Cantonese Opera）
+- 越剧（Yue Opera）
+- 豫剧（Henan Opera）
+- 黄梅戏（Huangmei Opera）
+
+=== 中国艺术 / Chinese Arts ===
+
+书法（Chinese Calligraphy）：
+- 五大书体：篆书、隶书、楷书、行书、草书
+- 书法四大家：王羲之、欧阳询、颜真卿、柳公权
+
+国画（Chinese Painting）：
+- 工笔画（meticulous painting）
+- 写意画（freehand brushwork）
+- 山水画（landscape painting）
+- 花鸟画（bird-and-flower painting）
+- 人物画（figure painting）
+
+中国音乐乐器：
+- 古琴（guqin）：七弦琴
+- 琵琶（pipa）：四弦琵琶
+- 二胡（erhu）：两弦胡琴
+- 笛子（dizi）：竹笛
+- 古筝（guzheng）：21弦筝
+
+=== 中国传统文化符号 / Chinese Cultural Symbols ===
+
+龙（Dragon）：
+- 中华民族的象征
+- 代表权力、尊贵、吉祥
+- 皇帝称为"真龙天子"
+
+凤凰（Phoenix）：
+- 象征吉祥、高贵
+- 常与龙配对，龙凤呈祥
+
+熊猫（Giant Panda）：
+- 中国国宝
+- 原产于四川、陕西、甘肃
+
+颜色象征：
+- 红色：吉祥、喜庆、好运
+- 黄色：皇家、高贵（皇帝专用色）
+- 白色：纯洁，但也象征丧事
+- 黑色：庄重、神秘
+
+数字象征：
+- 吉利数字：6（六六大顺）、8（发财）、9（长久）
+- 不吉利数字：4（死）
+
+=== 中国饮食文化 / Chinese Cuisine ===
+
+八大菜系（Eight Major Cuisines）：
+1. 鲁菜（Shandong Cuisine）
+2. 川菜（Sichuan Cuisine）：麻辣
+3. 粤菜（Cantonese Cuisine）：清淡
+4. 苏菜（Jiangsu Cuisine）
+5. 闽菜（Fujian Cuisine）
+6. 浙菜（Zhejiang Cuisine）
+7. 湘菜（Hunan Cuisine）：辣
+8. 徽菜（Anhui Cuisine）
+
+著名菜肴：
+- 北京烤鸭（Peking Duck）
+- 麻婆豆腐（Mapo Tofu）
+- 宫保鸡丁（Kung Pao Chicken）
+- 糖醋里脊（Sweet and Sour Pork）
+- 小笼包（Xiaolongbao / Soup Dumplings）
+
+茶文化（Tea Culture）：
+- 六大茶类：绿茶、红茶、乌龙茶、白茶、黄茶、黑茶
+- 名茶：龙井茶、碧螺春、铁观音、普洱茶
+
+餐桌礼仪：
+- 长辈先动筷
+- 敬酒文化
+- 圆桌共享
+
+=== 中国地理 / Chinese Geography ===
+
+五岳（Five Great Mountains）：
+- 东岳泰山（Mount Tai，山东）
+- 西岳华山（Mount Hua，陕西）
+- 南岳衡山（Mount Heng，湖南）
+- 北岳恒山（Mount Heng，山西）
+- 中岳嵩山（Mount Song，河南）
+
+四大河流：
+- 长江（Yangtze River）：亚洲第一长河
+- 黄河（Yellow River）：中华民族的母亲河
+- 珠江（Pearl River）
+- 黑龙江（Heilongjiang River）
+
+行政区划：
+- 23个省、5个自治区、4个直辖市、2个特别行政区
+- 直辖市：北京、上海、天津、重庆
+- 自治区：新疆、西藏、内蒙古、宁夏、广西
+- 特别行政区：香港、澳门
+
+=== 中国传统建筑 / Traditional Chinese Architecture ===
+
+故宫（Forbidden City）：
+- 明清两朝皇宫
+- 位于北京，建于1406-1420年
+- 世界最大的古代宫殿建筑群
+
+长城（Great Wall）：
+- 世界七大奇迹之一
+- 全长超过21,000公里
+- 主要建于明朝
+
+四合院（Siheyuan）：
+- 传统北京住宅
+- 四面房屋围合中央庭院
+
+建筑特色：
+- 飞檐（upturned eaves）
+- 斗拱（dougong brackets）
+- 琉璃瓦（glazed tiles）
+- 木结构（wooden structure）
+
+=== 中国传统服饰 / Traditional Chinese Clothing ===
+
+汉服（Hanfu）：
+- 汉族传统服饰
+- 特点：交领右衽、系带
+
+旗袍（Cheongsam / Qipao）：
+- 满族传统服饰演变而来
+- 20世纪20-40年代流行
+
+唐装（Tang Suit）：
+- 立领、盘扣
+
+中山装（Zhongshan Suit）：
+- 孙中山设计
+- 近代中国男性正装
+
+=== 中国武术 / Chinese Martial Arts ===
+
+传统武术流派：
+- 少林拳（Shaolin Kung Fu）：源于河南嵩山少林寺
+- 太极拳（Tai Chi）：柔和缓慢，刚柔并济
+- 形意拳（Xingyi Quan）
+- 八卦掌（Bagua Zhang）
+- 咏春拳（Wing Chun）
+
+武术器械：
+- 剑（sword）
+- 刀（broadsword）
+- 枪（spear）
+- 棍（staff）
+
+=== 中国成语与典故 / Chinese Idioms and Allusions ===
+
+常用成语：
+- 画蛇添足：doing something unnecessary
+- 守株待兔：waiting passively for opportunities
+- 亡羊补牢：better late than never
+- 刻舟求剑：being inflexible
+- 掩耳盗铃：self-deception
+- 井底之蛙：narrow-minded
+- 班门弄斧：showing off in front of experts
+- 对牛弹琴：casting pearls before swine
+
+历史典故：
+- 卧薪尝胆：勾践复国
+- 纸上谈兵：赵括失败
+- 破釜沉舟：项羽决战
+- 四面楚歌：项羽被围
+- 三顾茅庐：刘备请诸葛亮
+
+=== 中国传统医学 / Traditional Chinese Medicine (TCM) ===
+
+理论基础：
+- 阴阳五行（Yin-Yang and Five Elements）
+- 五行：金、木、水、火、土
+- 气血理论（Qi and Blood）
+- 经络穴位（Meridians and Acupoints）
+
+诊断方法：
+- 望闻问切（observation, listening, inquiry, palpation）
+
+治疗方法：
+- 针灸（Acupuncture）
+- 推拿（Massage / Tuina）
+- 拔罐（Cupping）
+- 中药（Herbal Medicine）
+
+著名医学典籍：
+- 《黄帝内经》（The Yellow Emperor's Inner Canon）
+- 《本草纲目》（Compendium of Materia Medica）- 李时珍
+- 《伤寒杂病论》- 张仲景
+
+=== 中国古代科技 / Ancient Chinese Technology ===
+
+天文历法：
+- 二十四节气（24 Solar Terms）
+- 农历（Lunar Calendar）
+- 干支纪年（Heavenly Stems and Earthly Branches）
+
+数学成就：
+- 《九章算术》
+- 祖冲之计算圆周率精确到小数点后7位
+
+=== 中国家庭关系称谓 / Chinese Family Titles ===
+
+直系亲属：
+- 爷爷/祖父（paternal grandfather）
+- 奶奶/祖母（paternal grandmother）
+- 外公/外祖父（maternal grandfather）
+- 外婆/外祖母（maternal grandmother）
+- 父亲/爸爸（father）
+- 母亲/妈妈（mother）
+- 哥哥（older brother）
+- 姐姐（older sister）
+- 弟弟（younger brother）
+- 妹妹（younger sister）
+
+=== 中国现代文化 / Modern Chinese Culture ===
+
+当代节日：
+- 国庆节（National Day）：10月1日
+- 劳动节（Labor Day）：5月1日
+- 青年节（Youth Day）：5月4日
+- 儿童节（Children's Day）：6月1日
+
+现代中国：
+- 改革开放（Reform and Opening-up）：1978年
+- 一带一路（Belt and Road Initiative）
+- 中国梦（Chinese Dream）
+- 社会主义核心价值观：富强、民主、文明、和谐、自由、平等、公正、法治、爱国、敬业、诚信、友善
+
+=== 中国语言特点 / Chinese Language Features ===
+
+语法特点：
+- 主谓宾结构（Subject-Verb-Object）
+- 无词形变化（no inflection）
+- 量词系统（measure words / classifiers）：个、只、条、本、张等
+- 语序重要（word order is crucial）
+
+常用量词：
+- 个：通用量词
+- 只：动物、器具
+- 条：长条形物体
+- 本：书籍
+- 张：纸、桌子、床
+- 件：衣服、事情
+- 辆：车辆
+
+敬语谦语：
+- 您（polite "you"）
+- 请（please）
+- 贵姓（what's your surname - polite）
+- 寒舍（my humble home）
+- 拙见（my humble opinion）
+
+中国人名特点：
+- 姓在前，名在后
+- 常见姓氏：王、李、张、刘、陈、杨、黄、赵、吴、周
+- 百家姓（Hundred Family Surnames）
+
+=== END OF KNOWLEDGE BASE ===
+=== 中国古代文明与文化遗产 / Ancient Chinese Civilization and Heritage ===
+
+甲骨文（Oracle Bone Script）：
+- 商朝时期使用，距今3000多年
+- 刻在龟甲和兽骨上
+- 中国最早的成熟文字系统
+- 1899年在河南安阳殷墟发现
+
+青铜器（Bronze Ware）：
+- 商周时期达到顶峰
+- 著名器物：司母戊鼎（最大青铜器）
+- 用途：礼器、乐器、兵器、工具
+- 铭文记录重要历史事件
+
+兵马俑（Terracotta Warriors）：
+- 秦始皇陵陪葬品
+- 1974年在陕西西安发现
+- 约8000件陶俑
+- 世界第八大奇迹
+
+丝绸之路（Silk Road）：
+- 汉朝张骞通西域开辟
+- 连接东亚与地中海
+- 促进东西方文化交流
+- 主要商品：丝绸、瓷器、茶叶、香料
+
+敦煌莫高窟（Dunhuang Mogao Caves）：
+- 佛教艺术宝库
+- 始建于366年
+- 735个洞窟
+- 壁画4.5万平方米
+- 彩塑2415尊
+
+=== 中国传统节气与民俗 / Traditional Solar Terms and Folk Customs ===
+
+二十四节气（24 Solar Terms）：
+春季：立春、雨水、惊蛰、春分、清明、谷雨
+夏季：立夏、小满、芒种、夏至、小暑、大暑
+秋季：立秋、处暑、白露、秋分、寒露、霜降
+冬季：立冬、小雪、大雪、冬至、小寒、大寒
+
+重要节气习俗：
+- 冬至：吃饺子、汤圆
+- 立春：贴春联、咬春
+- 清明：扫墓、踏青
+- 夏至：吃面条
+- 秋分：赏月、祭月
+- 冬至：进补、家庭团聚
+
+传统婚礼习俗：
+- 三书六礼：聘书、礼书、迎书
+- 六礼：纳采、问名、纳吉、纳征、请期、亲迎
+- 红色婚服（新娘穿红色）
+- 花轿迎亲
+- 拜天地、拜父母、夫妻对拜
+- 闹洞房
+
+丧葬习俗：
+- 守孝（服丧期）
+- 披麻戴孝（穿白色孝服）
+- 烧纸钱
+- 七七四十九天
+- 清明扫墓
+
+=== 中国古代科技成就 / Ancient Chinese Scientific Achievements ===
+
+天文学：
+- 浑天仪：东汉张衡发明
+- 水运仪象台：北宋苏颂制造
+- 观测日食、月食记录
+- 《授时历》：元朝郭守敬编制，精确度高
+
+数学：
+- 《九章算术》：东汉数学著作
+- 祖冲之：计算圆周率π精确到小数点后7位（3.1415926-3.1415927）
+- 勾股定理（Pythagorean theorem）
+- 珠算（Abacus）
+
+医学：
+- 华佗：东汉名医，发明麻沸散（世界最早麻醉剂）
+- 扁鹊：春秋名医，"望闻问切"四诊法
+- 张仲景：《伤寒杂病论》作者
+- 李时珍：《本草纲目》记载1892种药物
+
+农业：
+- 二十四节气指导农耕
+- 曲辕犁：唐朝发明，提高耕作效率
+- 筒车：灌溉工具
+- 《齐民要术》：北魏贾思勰著，综合性农书
+
+=== 中国诗词名篇 / Famous Chinese Poems ===
+
+李白名句：
+- "床前明月光，疑是地上霜" -《静夜思》
+- "白发三千丈，缘愁似个长" -《秋浦歌》
+- "长风破浪会有时，直挂云帆济沧海" -《行路难》
+- "天生我材必有用，千金散尽还复来" -《将进酒》
+- "飞流直下三千尺，疑是银河落九天" -《望庐山瀑布》
+
+杜甫名句：
+- "国破山河在，城春草木深" -《春望》
+- "会当凌绝顶，一览众山小" -《望岳》
+- "感时花溅泪，恨别鸟惊心" -《春望》
+- "安得广厦千万间，大庇天下寒士俱欢颜" -《茅屋为秋风所破歌》
+- "出师未捷身先死，长使英雄泪满襟" -《蜀相》
+
+白居易名句：
+- "离离原上草，一岁一枯荣" -《赋得古原草送别》
+- "野火烧不尽，春风吹又生"
+- "回眸一笑百媚生，六宫粉黛无颜色" -《长恨歌》
+- "在天愿作比翼鸟，在地愿为连理枝" -《长恨歌》
+
+王维名句：
+- "独在异乡为异客，每逢佳节倍思亲" -《九月九日忆山东兄弟》
+- "遥知兄弟登高处，遍插茱萸少一人"
+- "大漠孤烟直，长河落日圆" -《使至塞上》
+- "空山新雨后，天气晚来秋" -《山居秋暝》
+
+苏轼名句：
+- "人有悲欢离合，月有阴晴圆缺" -《水调歌头》
+- "但愿人长久，千里共婵娟" -《水调歌头》
+- "不识庐山真面目，只缘身在此山中" -《题西林壁》
+- "竹外桃花三两枝，春江水暖鸭先知" -《惠崇春江晚景》
+
+=== 中国历史名人 / Famous Historical Figures ===
+
+古代圣贤：
+- 孔子（Confucius，前551-前479）：儒家创始人，教育家
+- 老子（Laozi）：道家创始人，《道德经》作者
+- 孟子（Mencius，前372-前289）：儒家代表，"性善论"
+- 荀子（Xunzi，前313-前238）：儒家代表，"性恶论"
+- 庄子（Zhuangzi）：道家代表，《庄子》作者
+
+政治家：
+- 秦始皇（Emperor Qin Shi Huang，前259-前210）：统一中国，修建长城
+- 汉武帝（Emperor Wu of Han，前156-前87）：开疆拓土，罢黜百家独尊儒术
+- 唐太宗李世民（Emperor Taizong，599-649）：开创"贞观之治"
+- 康熙皇帝（Emperor Kangxi，1654-1722）：清朝盛世
+- 乾隆皇帝（Emperor Qianlong，1711-1799）：清朝最后盛世
+
+军事家：
+- 孙武（Sun Tzu）：《孙子兵法》作者
+- 白起（Bai Qi）：战国名将
+- 韩信（Han Xin）：汉朝开国功臣，"韩信点兵"
+- 岳飞（Yue Fei，1103-1142）：南宋抗金名将，"精忠报国"
+- 戚继光（Qi Jiguang）：明朝抗倭名将
+
+科学家：
+- 张衡（Zhang Heng，78-139）：发明地动仪、浑天仪
+- 祖冲之（Zu Chongzhi，429-500）：数学家、天文学家
+- 沈括（Shen Kuo，1031-1095）：《梦溪笔谈》作者，博学家
+- 郭守敬（Guo Shoujing，1231-1316）：天文学家、数学家
+
+文学家：
+- 屈原（Qu Yuan，前340-前278）：战国诗人，《离骚》作者
+- 司马迁（Sima Qian，前145-前86）：《史记》作者，"史家之绝唱"
+- 陶渊明（Tao Yuanming，365-427）：田园诗人
+- 曹雪芹（Cao Xueqin，1715-1763）：《红楼梦》作者
+
+=== 中国传统思想与价值观 / Traditional Chinese Thoughts and Values ===
+
+儒家核心价值：
+- 仁（benevolence）：爱人，仁爱之心
+- 义（righteousness）：正义，道义
+- 礼（propriety）：礼节，规矩
+- 智（wisdom）：智慧，明辨是非
+- 信（trustworthiness）：诚信，守信用
+- 忠（loyalty）：忠诚
+- 孝（filial piety）：孝顺父母
+- 悌（brotherly love）：兄友弟恭
+
+中庸之道（Doctrine of the Mean）：
+- 不偏不倚，折中调和
+- 过犹不及
+- 和而不同
+- 中正平和
+
+天人合一（Harmony between Heaven and Man）：
+- 人与自然和谐相处
+- 顺应自然规律
+- "天时、地利、人和"
+
+阴阳五行（Yin-Yang and Five Elements）：
+- 阴阳：对立统一、相互转化
+- 五行：金、木、水、火、土
+- 五行相生：木生火、火生土、土生金、金生水、水生木
+- 五行相克：木克土、土克水、水克火、火克金、金克木
+
+=== 中国传统艺术详解 / Traditional Chinese Arts in Detail ===
+
+书法艺术（Calligraphy）：
+五大书体：
+- 篆书（Seal Script）：最古老，庄重典雅
+- 隶书（Clerical Script）：汉代流行，横平竖直
+- 楷书（Regular Script）：标准字体，端正规范
+- 行书（Running Script）：流畅自然，介于楷草之间
+- 草书（Cursive Script）：连绵不断，抽象豪放
+
+著名书法家：
+- 王羲之（Wang Xizhi，303-361）：书圣，《兰亭序》"天下第一行书"
+- 颜真卿（Yan Zhenqing，709-784）：颜体创始人，端庄雄浑
+- 柳公权（Liu Gongquan，778-865）：柳体创始人，"颜筋柳骨"
+- 欧阳询（Ouyang Xun，557-641）：欧体创始人，险劲峭拔
+- 赵孟頫（Zhao Mengfu，1254-1322）：元代书法家
+
+国画技法（Chinese Painting Techniques）：
+笔法：
+- 中锋：笔杆垂直，线条圆润有力
+- 侧锋：笔杆倾斜，线条变化丰富
+- 逆锋：逆向行笔
+- 顺锋：顺向行笔
+
+墨法：
+- 焦墨：浓黑干涩
+- 浓墨：墨色浓重
+- 重墨：稍淡于浓墨
+- 淡墨：墨色轻淡
+- 清墨：墨色极淡
+
+著名画家：
+- 顾恺之（Gu Kaizhi，348-409）：东晋画家，《洛神赋图》
+- 吴道子（Wu Daozi，680-759）：唐代"画圣"
+- 范宽（Fan Kuan，950-1032）：北宋山水画大师
+- 张择端（Zhang Zeduan）：《清明上河图》作者
+- 齐白石（Qi Baishi，1864-1957）：近代国画大师
+
+=== 中国戏曲文化 / Chinese Opera Culture ===
+
+京剧角色详解：
+生（Male roles）：
+- 老生：中老年男子，如诸葛亮、关羽
+- 小生：青年男子，如书生、公子
+- 武生：擅长武打的男性角色
+
+旦（Female roles）：
+- 青衣：端庄娴静的女性
+- 花旦：活泼开朗的少女
+- 武旦：擅长武打的女性
+- 老旦：老年妇女
+
+净（Painted face）：
+- 铜锤花脸：以唱功为主
+- 架子花脸：以做功、念白为主
+- 武花脸：擅长武打
+
+丑（Clown）：
+- 文丑：滑稽幽默的文人、百姓
+- 武丑：擅长武打且诙谐的角色
+
+京剧经典剧目：
+- 《霸王别姬》：项羽与虞姬的悲剧
+- 《贵妃醉酒》：杨贵妃的故事
+- 《空城计》：诸葛亮智退司马懿
+- 《三岔口》：武戏代表作
+- 《四郎探母》：杨四郎的故事
+
+脸谱艺术（Facial Makeup）：
+颜色象征：
+- 红色：忠勇正直（如关羽）
+- 黑色：刚正不阿（如包公）
+- 白色：奸诈狡猾（如曹操）
+- 黄色：凶狠残暴
+- 蓝色：刚强勇猛
+- 绿色：侠骨义胆
+- 金银色：神仙妖怪
+
+=== 中国茶文化详解 / Chinese Tea Culture in Detail ===
+
+六大茶类制作：
+绿茶（Green Tea）：
+- 不发酵茶
+- 代表：龙井、碧螺春、黄山毛峰
+- 特点：清汤绿叶，鲜爽
+- 制作：杀青、揉捻、干燥
+
+红茶（Black Tea）：
+- 全发酵茶
+- 代表：祁门红茶、正山小种
+- 特点：红汤红叶，甘醇
+- 制作：萎凋、揉捻、发酵、干燥
+
+乌龙茶（Oolong Tea）：
+- 半发酵茶
+- 代表：铁观音、大红袍、冻顶乌龙
+- 特点：香气馥郁，韵味独特
+- 制作：萎凋、做青、炒青、揉捻、干燥
+
+白茶（White Tea）：
+- 微发酵茶
+- 代表：白毫银针、白牡丹
+- 特点：银白色，清淡甘甜
+- 制作：萎凋、干燥
+
+黄茶（Yellow Tea）：
+- 轻发酵茶
+- 代表：君山银针、蒙顶黄芽
+- 特点：黄汤黄叶
+- 制作：杀青、闷黄、干燥
+
+黑茶（Dark Tea）：
+- 后发酵茶
+- 代表：普洱茶、六堡茶
+- 特点：陈香浓郁，越陈越香
+- 制作：杀青、揉捻、渥堆、干燥
+
+茶道礼仪：
+- 备器：准备茶具
+- 温壶：用热水温壶
+- 置茶：放入适量茶叶
+- 冲泡：高冲低斟
+- 奉茶：双手奉茶，茶七分满
+- 品茶：三口品茶，"一口为喝，二口为饮，三口为品"
+
+功夫茶艺（Gongfu Tea Ceremony）：
+- 闻香：欣赏茶香
+- 观色：欣赏茶汤色泽
+- 品味：细品茶味
+- 韵味：回味茶韵
+
+=== 中国饮食文化详解 / Chinese Cuisine Culture in Detail ===
+
+八大菜系详解：
+鲁菜（Shandong Cuisine）：
+- 特点：鲜咸为主，讲究火候
+- 名菜：葱烧海参、九转大肠、糖醋鲤鱼
+- 技法：爆、炒、烧、塌
+
+川菜（Sichuan Cuisine）：
+- 特点：麻辣鲜香，一菜一格
+- 名菜：麻婆豆腐、宫保鸡丁、回锅肉、水煮鱼
+- 调料：花椒、辣椒、豆瓣酱
+
+粤菜（Cantonese Cuisine）：
+- 特点：清淡鲜美，注重食材本味
+- 名菜：白切鸡、烧鹅、虾饺、肠粉
+- 技法：蒸、炒、烤
+
+苏菜（Jiangsu Cuisine）：
+- 特点：鲜嫩可口，浓而不腻
+- 名菜：松鼠桂鱼、狮子头、盐水鸭
+- 技法：炖、焖、煨
+
+闽菜（Fujian Cuisine）：
+- 特点：鲜香清淡，善用海鲜
+- 名菜：佛跳墙、荔枝肉、沙茶面
+- 特色：汤菜
+
+浙菜（Zhejiang Cuisine）：
+- 特点：清爽细腻，注重刀工
+- 名菜：西湖醋鱼、东坡肉、龙井虾仁
+- 技法：炒、炸、烩、焖
+
+湘菜（Hunan Cuisine）：
+- 特点：香辣酸，口味重
+- 名菜：剁椒鱼头、毛氏红烧肉、湘西外婆菜
+- 特色：腊味、酸辣
+
+徽菜（Anhui Cuisine）：
+- 特点：重油重色，擅长炖煮
+- 名菜：臭鳜鱼、黄山炖鸽、腊八豆腐
+- 技法：烧、炖、焖
+
+中国传统面食：
+- 饺子（Dumplings）：北方主食，象征团圆
+- 包子（Steamed Buns）：各地皆有，馅料多样
+- 馄饨（Wontons）：南方传统小吃
+- 面条（Noodles）：长寿面、刀削面、拉面、炸酱面
+- 春卷（Spring Rolls）：春节食品
+- 粽子（Zongzi）：端午节传统食品
+
+=== 中国武术文化 / Chinese Martial Arts Culture ===
+
+内家拳（Internal Martial Arts）：
+太极拳（Tai Chi）：
+- 流派：陈式、杨式、吴式、武式、孙式
+- 特点：柔和缓慢，刚柔相济
+- 理论：以柔克刚，四两拨千斤
+- 养生功效：强身健体，修身养性
+
+形意拳（Xingyi Quan）：
+- 五行拳：劈拳（金）、钻拳（水）、崩拳（木）、炮拳（火）、横拳（土）
+- 十二形：龙、虎、猴、马、鸡、燕、蛇、鹞、鹰、熊、鼍、猫
+- 特点：动作简洁，劲力整齐
+
+八卦掌（Bagua Zhang）：
+- 基本步法：走圈
+- 八掌：单换掌、双换掌、顺势掌、背身掌、转身掌、磨身掌、三穿掌、回身掌
+- 特点：以走转为主，身法灵活
+
+外家拳（External Martial Arts）：
+少林拳（Shaolin Kung Fu）：
+- 起源：河南嵩山少林寺
+- 基本功：马步、弓步、仆步、虚步
+- 套路：五步拳、罗汉拳、龙拳、虎拳
+- 器械：棍、刀、枪、剑
+- 禅武合一：习武修禅
+
+咏春拳（Wing Chun）：
+- 起源：福建南少林
+- 代表人物：叶问、李小龙
+- 特点：近距离格斗，攻防同步
+- 训练：木人桩、黐手
+
+南拳：
+- 洪拳：洪熙官创立
+- 蔡李佛拳：综合多家之长
+- 咏春拳：短桥窄马
+- 特点：步稳势烈，刚猛有力
+
+传统兵器：
+- 刀（Broadsword）：单刀、双刀、大刀
+- 剑（Sword）：双刃，轻灵飘逸
+- 枪（Spear）：百兵之王
+- 棍（Staff）：少林棍法闻名
+- 其他：鞭、锤、斧、钩、叉、戟
+
+武术精神：
+- 尚武崇德：习武先习德
+- 强身健体：内外兼修
+- 自卫防身：保护自己和他人
+- 修身养性：磨练意志，陶冶情操
+
+=== 中国传统医学详解 / Traditional Chinese Medicine Details ===
+
+中医基础理论：
+阴阳学说：
+- 阴阳对立：寒热、虚实、表里
+- 阴阳互根：阴中有阳，阳中有阴
+- 阴阳消长：此消彼长
+- 阴阳转化：物极必反
+
+五行学说：
+五行与五脏：
+- 木 → 肝
+- 火 → 心
+- 土 → 脾
+- 金 → 肺
+- 水 → 肾
+
+五行与五味：
+- 木 → 酸
+- 火 → 苦
+- 土 → 甘
+- 金 → 辛
+- 水 → 咸
+
+五行与四季：
+- 木 → 春
+- 火 → 夏
+- 土 → 长夏
+- 金 → 秋
+- 水 → 冬
+
+气血津液：
+- 气：生命活动的动力
+- 血：营养滋润全身
+- 津液：体内正常水液
+- 气血关系：气为血之帅，血为气之母
+
+经络系统：
+十二正经：
+- 手三阴：手太阴肺经、手厥阴心包经、手少阴心经
+- 手三阳：手阳明大肠经、手少阳三焦经、手太阳小肠经
+- 足三阴：足太阴脾经、足厥阴肝经、足少阴肾经
+- 足三阳：足阳明胃经、足少阳胆经、足太阳膀胱经
+
+奇经八脉：
+- 督脉、任脉、冲脉、带脉
+- 阴跷脉、阳跷脉、阴维脉、阳维脉
+
+诊断方法（四诊）：
+望诊：
+- 望神：精神状态
+- 望色：面色变化
+- 望形：体形胖瘦
+- 望舌：舌质、舌苔
+
+闻诊：
+- 听声音：语言、呼吸、咳嗽
+- 嗅气味：口气、体气
+
+问诊（十问）：
+- 问寒热、问汗、问头身
+- 问二便、问饮食、问睡眠
+- 问月经、问带下、问既往史
+
+切诊：
+- 脉诊：浮沉、迟数、虚实、滑涩
+- 按诊：按压腹部、四肢
+
+常用中药：
+补益药：
+- 人参：大补元气
+- 黄芪：补气升阳
+- 当归：补血活血
+- 枸杞：滋补肝肾
+- 红枣：补中益气
+
+清热药：
+- 金银花：清热解毒
+- 菊花：疏风清热
+- 板蓝根：清热解毒
+- 黄连：清热燥湿
+
+活血药：
+- 丹参：活血化瘀
+- 红花：活血通经
+- 川芎：活血行气
+
+治疗方法：
+针灸（Acupuncture and Moxibustion）：
+- 针法：毫针、三棱针、皮肤针
+- 灸法：艾灸、温灸、隔物灸
+- 常用穴位：合谷、足三里、内关、百会、涌泉
+
+推拿按摩（Massage/Tuina）：
+- 手法：推、拿、按、摩、揉、点、搓、捏
+- 适应症：颈椎病、腰痛、失眠
+
+拔罐（Cupping）：
+- 火罐、气罐、水罐
+- 功效：祛风散寒、活血化瘀
+
+刮痧（Gua Sha）：
+- 工具：刮痧板
+- 部位：背部、颈部、四肢
+- 功效：活血化瘀、疏通经络
+
+=== 中国成语典故详解 / Chinese Idioms and Allusions in Detail ===
+
+历史成语故事：
+
+卧薪尝胆（Endure hardships for revenge）：
+- 人物：越王勾践
+- 故事：被吴王夫差打败后，勾践卧薪尝胆，励精图治，最终复国
+
+纸上谈兵（Armchair strategist）：
+- 人物：赵括
+- 故事：只会纸上谈兵，不懂实战，导致长平之战惨败
+
+破釜沉舟（Burn one's boats）：
+- 人物：项羽
+- 故事：渡河后破釜沉舟，断绝退路，激励士兵奋战
+
+四面楚歌（Be besieged on all sides）：
+- 人物：项羽
+- 故事：被刘邦军队包围，听到四面楚歌，知道大势已去
+
+三顾茅庐（Make repeated requests）：
+- 人物：刘备、诸葛亮
+- 故事：刘备三次拜访诸葛亮，诚心请他出山辅佐
+
+完璧归赵（Return something intact）：
+- 人物：蔺相如
+- 故事：出使秦国，机智保护和氏璧完整归赵
+
+负荆请罪（Offer a humble apology）：
+- 人物：廉颇、蔺相如
+- 故事：廉颇认识到错误，背负荆条向蔺相如请罪
+
+指鹿为马（Deliberately misrepresent）：
+- 人物：赵高
+- 故事：赵高指着鹿说是马，测试大臣们对他的忠诚
+
+动物成语：
+
+龙飞凤舞（Bold and vigorous strokes）：
+- 形容书法笔势飘逸，气势磅礴
+
+虎头蛇尾（Start strong but end weak）：
+- 开始很好，结束草率
+
+鹤立鸡群（Stand out from the crowd）：
+- 比喻才能出众
+
+狐假虎威（Bully others by flaunting one's powerful connections）：
+- 狐狸借老虎的威风吓唬其他动物
+
+叶公好龙（Profess to love what one actually fears）：
+- 叶公喜欢龙的图案，但见到真龙却害怕
+
+画蛇添足（Ruin something by adding unnecessary details）：
+- 画蛇时添加脚，反而不像蛇了
+
+数字成语：
+
+一诺千金（A promise is worth a thousand gold）：
+- 承诺极其珍贵可靠
+
+二桃杀三士（Sow discord）：
+- 用两个桃子让三个勇士互相争斗
+
+三人成虎（Repeated rumor becomes truth）：
+- 三个人都说市场有老虎，别人就信了
+
+四面八方（From all directions）：
+- 到处，各个方向
+
+五湖四海（All corners of the land）：
+- 全国各地
+
+六神无主（Be in a state of utter stupefaction）：
+- 形容慌乱，不知所措
+
+七上八下（Feel uneasy）：
+- 心神不安
+
+八仙过海，各显神通（Each shows their special prowess）：
+- 各有各的本领
+
+九牛一毛（A drop in the ocean）：
+- 微不足道
+
+十全十美（Perfect）：
+- 完美无缺
+
+百折不挠（Indomitable）：
+- 意志坚强，不屈不挠
+
+千钧一发（Critical moment）：
+- 极其危急的时刻
+
+万紫千红（A riot of colors）：
+- 形容百花盛开，色彩艳丽
+
+=== END OF EXPANDED KNOWLEDGE BASE ===

@@ -200,15 +200,18 @@ def loadPipeline(method: str = "server"):
     """
     # Ensure GGUF models exist (for server use)
     ensure_gguf_models_exist()
+    from .server_pipeline import loadServerPipeline
     
-    if method == "server":
-        print("[FACTORY] Initializing Server Pipeline (fast mode)...")
-        from .server_pipeline import loadServerPipeline
-        return loadServerPipeline()
-    else:
-        print("[FACTORY] Initializing Local Pipeline (transformers fallback)...")
-        from .local_pipeline import loadLocalPipeline
-        return loadLocalPipeline()
+    return loadServerPipeline()
+    
+    # if method == "server":
+    #     print("[FACTORY] Initializing Server Pipeline (fast mode)...")
+    #     from .server_pipeline import loadServerPipeline
+    #     return loadServerPipeline()
+    # else:
+    #     print("[FACTORY] Initializing Local Pipeline (transformers fallback)...")
+    #     from .local_pipeline import loadLocalPipeline
+    #     return loadLocalPipeline()
 
 
 __all__ = ['loadPipeline', 'convert_to_gguf', 'ensure_gguf_models_exist']

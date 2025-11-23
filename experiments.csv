@@ -40,3 +40,9 @@ timestamp,name,method,questions,total_time_s,avg_latency_ms,throughput_qps
 2025-11-22 14:47:24,default_run,local,10,0.48,47.9,20.86
 2025-11-22 14:58:44,default_run,server,10,29.61,2961.3,0.34
 2025-11-22 15:13:25,default_run,server,10,27.98,2798.4,0.36
+2025-11-23 08:49:17,default_run,local,10,0.47,46.6,21.45
+2025-11-23 08:51:59,default_run,server,10,14.52,1452.1,0.69
+2025-11-23 08:54:53,default_run,local,10,29.99,2999.0,0.33
+2025-11-23 09:11:56,default_run,local,10,22.27,2227.0,0.45
+2025-11-23 09:12:48,default_run,local,10,20.63,2062.9,0.48
+2025-11-23 09:40:21,default_run,local,10,42.63,4263.0,0.23
