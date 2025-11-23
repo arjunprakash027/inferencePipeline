@@ -19,6 +19,23 @@ from pathlib import Path
 MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 CACHE_DIR = "/app/models"
 
+MODEL_CONFIGS = {
+    "meta-llama/Llama-3.1-8B-Instruct": {
+        "dtype": "float16",
+        "quantization": "bitsandbytes",
+        "load_format": "bitsandbytes",
+        "gpu_memory_utilization": 0.85,
+    },
+    "default": {
+        "dtype": "float16",
+        "quantization": None,
+        "load_format": "auto",
+        "gpu_memory_utilization": 0.90,
+    },
+}
+
+
+
 def find_model_path(model_name: str, cache_dir: str) -> str:
     """Find the actual snapshot path in HuggingFace cache"""
     cache_path = Path(cache_dir)
@@ -46,14 +63,17 @@ class InferencePipeline:
     def __init__(self):
         """Initialize pipeline with vLLM for maximum accuracy"""
 
-        model_path = find_model_path(MODEL_NAME, CACHE_DIR)
-        print(f"🚀 Loading {MODEL_NAME.split('/')[-1]} with vLLM for maximum accuracy...")
+        raw_model_path = find_model_path(MODEL_NAME, CACHE_DIR)
+        model_config = MODEL_CONFIGS.get(MODEL_NAME, MODEL_CONFIGS["default"])
 
-        # Configure vLLM with accuracy-focused settings for Tesla T4
+        print(f" Loading {MODEL_NAME.split('/')[-1]} with vLLM (dtype={model_config['dtype']}, quantization={model_config.get('quantization')})...")
+
         self.llm = LLM(
-            model=model_path,
-            dtype="float16",  # Use FP16 for T4 GPU
-            gpu_memory_utilization=0.85,  # Leave some headroom for stability
+            model=raw_model_path,
+            dtype=model_config.get("dtype", "float16"),
+            quantization=model_config.get("quantization", None),
+            load_format=model_config.get("load_format", "auto"),
+            gpu_memory_utilization=model_config.get("gpu_memory_utilization", 0.85),
             max_model_len=4096,
             enforce_eager=True,  # More stable on T4 with larger model
             max_num_seqs=16,  # Reduced batch size for 8B model

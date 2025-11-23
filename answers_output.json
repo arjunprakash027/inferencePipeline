@@ -1,0 +1,114 @@
+[
+  {
+    "questionID": "4f6f8976595e1b5a22e9d32ddb37a379fed400c853705d8b22e6ed82e1efd66c",
+    "question": "Solve the quadratic equation x² - 5x + 6 = 0 and explain your method.",
+    "answer": "**Final Answer:** The solutions to the quadratic equation x² - 5x + 6 = 0 are x = [boxed{2, 3}].",
+    "difficulty": "medium",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "6ff59e0a83b07541e279a17748f6add3178cf0d8d5e4908b91dad50953d6b845",
+    "question": "What is the determinant of a 2×2 matrix [[a,b],[c,d]] and why is it useful?",
+    "answer": "**Determinant:** ad - bc",
+    "difficulty": "hard",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "390aa1a849d4f3dba4437060fc9c20d6cb39f82357fd3d9b5d922e5965c14324",
+    "question": "Could you explain why matrices help solve { x + y = 5 ; x - y = 1 }?",
+    "answer": "**Final Answer:** The system of equations { x + y = 5 ; x - y = 1 } has no solution.",
+    "difficulty": "medium",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "0d97269ed36c8a503bf54f87d1a5b85f894ea1fc0a79bd29b2d824cd4dd79dbb",
+    "question": "What is the slope-intercept form of a linear equation?",
+    "answer": "**Slope-Intercept Form:** y = mx + b",
+    "difficulty": "easy",
+    "subject": "algebra"
+  },
+  {
+    "questionID": "66a04b7661f6269ce17866876661bbfcb10a56fa4e1b4e490b7fadec74164946",
+    "question": "中国最长的河流是什么？",
+    "answer": "中国最长的河流是长江（, Cháng Jiāng）。",
+    "difficulty": "medium",
+    "subject": "chinese"
+  },
+  {
+    "questionID": "19ffac3b39043d40e41d69a8fe20652a1a2b8bc9b4d0f749fe17b83b5143f270",
+    "question": "请解释\"五四运动\"的历史意义。",
+    "answer": "总之，五四运动是中国历史上一个重要的里程碑，标志着中国的现代化和民族复兴的开始。",
+    "difficulty": "medium",
+    "subject": "chinese"
+  },
+  {
+    "questionID": "076ac52d0de8f7b06ecd8af135301c38568c6177bb5656e15d56182c02622b5b",
+    "question": "什么是\"一带一路\"倡议？它的主要目标是什么？",
+    "answer": "总之，一带一路倡议是中国政府的一项重大外交政策，旨在促进地区的经济发展和合作，增强地区的经济整合和互联互通。",
+    "difficulty": "hard",
+    "subject": "chinese"
+  },
+  {
+    "questionID": "df513a6bb5cfdd25ed0fb5f75e139895817151d4b17e904c32b9bebd57da175f",
+    "question": "中国的首都是哪里？",
+    "answer": "中国的首都是北京（ Běijīng ）。",
+    "difficulty": "easy",
+    "subject": "chinese"
+  },
+  {
+    "questionID": "006bb20b63577261123db359f08b4d6c43b45fcf0763400fc411104c9c7d5739",
+    "question": "What is the difference between weather and climate?",
+    "answer": "In summary, weather is short-term and local, while climate is long-term and regional.",
+    "difficulty": "medium",
+    "subject": "geography"
+  },
+  {
+    "questionID": "85f8b84e5331347732cdd3bb7b8b67d0c6e14b55c225797e4c9aa7c40f6955d2",
+    "question": "Explain the process of plate tectonics and how it creates mountains.",
+    "answer": "In summary, plate tectonics is the driving force behind the formation of mountains through the processes of orogenesis, including continental-continental collision, oceanic-continental subduction, and volcanic arc formation.",
+    "difficulty": "hard",
+    "subject": "geography"
+  },
+  {
+    "questionID": "6ab925996c1f52c7a9e8d4cb22a9b4300d998ab5b9303f926a58bfe470ececd0",
+    "question": "What is the highest point in South America?",
+    "answer": "The highest point in South America is Aconcagua, which is located in the Andes mountain range in Argentina. It stands at an elevation of 6,962 meters (22,841 feet) above sea level.",
+    "difficulty": "medium",
+    "subject": "geography"
+  },
+  {
+    "questionID": "db8edcc2c88c58a7761201585cf1aa9d9a9b53fc3c724690fe09fec699d932f5",
+    "question": "What are the five oceans of the world?",
+    "answer": "Note: Some geographers consider the Southern Ocean as a part of the Atlantic, Indian, and Pacific Oceans, but it is now recognized as a separate ocean by the International Hydrographic Organization (IHO) since 2000.",
+    "difficulty": "easy",
+    "subject": "geography"
+  },
+  {
+    "questionID": "a886964098d9efd3521c9e60539e648ae8ae23334107946eac47bfa095a42a6d",
+    "question": "What were the main causes of World War I?",
+    "answer": "These factors ultimately led to the outbreak of World War I in August 1914.",
+    "difficulty": "medium",
+    "subject": "history"
+  },
+  {
+    "questionID": "7dd2d530f67d363a47b7d5e7b086efeb62a12dea1f05ebd581da837e83a28e44",
+    "question": "How did the printing press revolutionize European society in the 15th-16th centuries?",
+    "answer": "In summary, the printing press revolutionized European society by facilitating the mass production of books, standardizing language and literature, disseminating knowledge, increasing access to information, having economic implications, impacting the Protestant Reformation, and standardizing education.",
+    "difficulty": "hard",
+    "subject": "history"
+  },
+  {
+    "questionID": "154cf425add4efd8f0af44818e4db3d64084421d3be6bfb407a4decc92f6b00b",
+    "question": "In what ways did the Industrial Revolution influence political ideologies in Europe?",
+    "answer": "In summary, the Industrial Revolution influenced European political ideologies by creating new social classes, economic conditions, and intellectual currents that shaped the development of liberalism, socialism, conservatism, nationalism, and radicalism.",
+    "difficulty": "medium",
+    "subject": "history"
+  },
+  {
+    "questionID": "b789fa8a10c78624617a70ea006cb876d5826acbe69ae96caa69456ac070cffd",
+    "question": "Who were the Allied Powers in World War II?",
+    "answer": "These nations, along with several others, contributed troops, resources, and support to the Allied effort during World War II.",
+    "difficulty": "easy",
+    "subject": "history"
+  }
+]
