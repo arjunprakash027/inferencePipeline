@@ -97,10 +97,35 @@ class InferencePipeline:
 
         print(f"⚡ Processing {len(questions)} questions...")
 
-        # Create prompts - just the question directly
+        # Create prompts with subject-specific optimization
         prompts = []
         for q in questions:
-            messages = [{"role": "user", "content": q['question']}]
+            subject = q.get('subject', '').lower()
+            question_text = q['question']
+
+            # Enhanced prompts for algebra and Chinese
+            if subject == "algebra":
+                content = f"""Solve this algebra problem step by step and give the final answer clearly.
+
+Example:
+Q: If 3x + 2 = 11, what is x?
+A: Subtract 2 from both sides: 3x = 9
+   Divide both sides by 3: x = 3
+   Therefore, x = 3
+
+Now solve:
+{question_text}"""
+
+            elif subject == "chinese":
+                content = f"""You are an expert in Chinese language and culture. Answer this question accurately and completely.
+
+{question_text}"""
+
+            else:
+                # Simple direct prompt for other subjects
+                content = question_text
+
+            messages = [{"role": "user", "content": content}]
             prompt = self.tokenizer.apply_chat_template(
                 messages,
                 tokenize=False,
