@@ -1,5 +1,1 @@
-import sys
-
-sys.path.insert(0, './inferencePipeline/')
-
-from inferencePipeline import loadPipeline
+from inference_pipeline import load_pipeline

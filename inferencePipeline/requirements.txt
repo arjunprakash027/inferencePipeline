@@ -1,6 +1,0 @@
-transformers==4.49.0
-torch==2.5.1
-accelerate==1.2.1
-sentencepiece==0.2.0
-protobuf==5.29.1
-llama-cpp-python
